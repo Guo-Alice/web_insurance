@@ -154,28 +154,78 @@ def call_dify_workflow_alternative(user_data, previous_error):
 def extract_dify_response(result):
     """提取Dify响应内容"""
     try:
-        if 'data' in result and 'outputs' in result['data']:
-            outputs = result['data']['outputs']
-            
-            possible_keys = ['answer', 'output', 'response', 'text', 'content', 'result']
-            for key in possible_keys:
-                if key in outputs and outputs[key]:
-                    return {
-                        "success": True,
-                        "answer": str(outputs[key]),
-                        "source": "Dify AI工作流"
-                    }
+        print(f"解析Dify响应，数据结构: {list(result.keys())}")
         
+        # 检查是否有错误
+        if 'error' in result:
+            error_msg = result.get('error', {})
+            if isinstance(error_msg, dict):
+                error_msg = error_msg.get('message', '未知错误')
+            return {
+                "success": False,
+                "answer": f"Dify错误: {error_msg}",
+                "source": "Dify API错误"
+            }
+        
+        # 尝试从不同位置提取响应
+        if 'data' in result:
+            data = result['data']
+            
+            # 检查 outputs
+            if 'outputs' in data:
+                outputs = data['outputs']
+                print(f"找到outputs字段: {list(outputs.keys())}")
+                
+                # 尝试所有可能的键
+                for key in outputs.keys():
+                    if outputs[key] and str(outputs[key]).strip():
+                        content = outputs[key]
+                        if isinstance(content, dict):
+                            # 如果是字典，转换为字符串
+                            content = json.dumps(content, ensure_ascii=False, indent=2)
+                        return {
+                            "success": True,
+                            "answer": str(content).strip(),
+                            "source": "Dify AI工作流",
+                            "raw_response": result
+                        }
+            
+            # 如果直接有answer字段
+            if 'answer' in data:
+                return {
+                    "success": True,
+                    "answer": str(data['answer']).strip(),
+                    "source": "Dify AI工作流",
+                    "raw_response": result
+                }
+        
+        # 如果没有找到预期的结构，检查是否有其他结构
+        for key in ['answer', 'response', 'text', 'content', 'result', 'output']:
+            if key in result and result[key]:
+                return {
+                    "success": True,
+                    "answer": str(result[key]).strip(),
+                    "source": "Dify AI工作流",
+                    "raw_response": result
+                }
+        
+        # 如果都没有找到，返回整个响应用于调试
+        response_str = json.dumps(result, ensure_ascii=False, indent=2)
         return {
             "success": True,
-            "answer": json.dumps(result, ensure_ascii=False, indent=2),
-            "source": "Dify工作流（原始响应）"
+            "answer": f"Dify工作流返回了数据，但格式不匹配。原始响应:\n\n{response_str}",
+            "source": "Dify工作流（原始响应）",
+            "raw_response": result
         }
+        
     except Exception as e:
+        print(f"解析Dify响应异常: {str(e)}")
+        traceback.print_exc()
         return {
             "success": False,
-            "answer": f"解析Dify响应失败: {str(e)}",
-            "source": "系统错误"
+            "answer": f"解析Dify响应失败: {str(e)}\n\n原始数据:\n{json.dumps(result, ensure_ascii=False)[:500]}",
+            "source": "系统错误",
+            "raw_response": result
         }
 
 def get_fallback_response(user_data, error_reason=""):
@@ -257,6 +307,78 @@ def generate_standard_advice(user_data):
         return f"生成建议时出错：{str(e)}"
 
 # ========== Flask 路由 ==========
+@app.route('/api/test-dify')
+def test_dify_connection():
+    """测试Dify连接和格式"""
+    test_cases = [
+        {
+            "name": "JSON字符串格式",
+            "input": json.dumps({
+                "age": "35",
+                "annual_income": "25.0",
+                "risk_tolerance": "平衡型",
+                "location": "北京",
+                "social_security": "城镇职工",
+                "retirement_age": "60",
+                "investment_amount": "12.0"
+            }, ensure_ascii=False)
+        },
+        {
+            "name": "简单文本格式",
+            "input": "年龄35岁,收入25万元,风险平衡型,地区北京,社保城镇职工,退休年龄60岁,投资12万元"
+        },
+        {
+            "name": "详细文本格式",
+            "input": "用户年龄35岁，年收入25万元，风险偏好为平衡型，所在地为北京，社保类型为城镇职工，计划60岁退休，计划投资金额12万元。"
+        }
+    ]
+    
+    results = []
+    
+    for test_case in test_cases:
+        try:
+            headers = {
+                "Authorization": f"Bearer {DIFY_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "inputs": {
+                    "input": test_case["input"]
+                },
+                "response_mode": "blocking",
+                "user": "user_test"
+            }
+            
+            response = requests.post(
+                f"{DIFY_API_URL}/workflows/run",
+                headers=headers,
+                json=payload,
+                timeout=15
+            )
+            
+            results.append({
+                "test_case": test_case["name"],
+                "status_code": response.status_code,
+                "input_preview": test_case["input"][:100] + ("..." if len(test_case["input"]) > 100 else ""),
+                "response_preview": response.text[:200] if response.text else "无响应",
+                "success": response.status_code == 200
+            })
+            
+        except Exception as e:
+            results.append({
+                "test_case": test_case["name"],
+                "error": str(e),
+                "success": False
+            })
+    
+    return jsonify({
+        "workflow_id": WORKFLOW_ID,
+        "api_key_configured": bool(DIFY_API_KEY and not DIFY_API_KEY.startswith("app-xxx")),
+        "test_cases": results,
+        "timestamp": datetime.now().isoformat()
+    })
+
 @app.route('/')
 def index():
     """显示主页"""
@@ -434,6 +556,7 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=True)
 else:
     application = app
+
 
 
 
