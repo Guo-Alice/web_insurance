@@ -3,418 +3,495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>养老金规划报告 - 智能养老金规划系统</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>养老金规划结果</title>
+    <!-- 使用本地静态文件 -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/bootstrap-icons.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --accent-color: #2ecc71;
-            --warning-color: #f39c12;
-            --light-bg: #f8f9fa;
-        }
-        
         body {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Microsoft YaHei', sans-serif;
+            padding-top: 20px;
         }
-        
-        .header {
-            background: linear-gradient(90deg, var(--primary-color) 0%, #34495e 100%);
-            color: white;
-            padding: 1.5rem 0;
-            border-radius: 0 0 20px 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        
         .card {
             border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border: none;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-            margin-bottom: 1.5rem;
+            margin-bottom: 20px;
         }
-        
-        .card-header {
-            background: linear-gradient(90deg, var(--secondary-color) 0%, #2980b9 100%);
+        .header-bg {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            border-radius: 15px 15px 0 0 !important;
-            padding: 1rem 1.5rem;
-            font-weight: 600;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
         }
-        
-        .info-box {
-            background-color: white;
+        .result-card {
+            background: white;
+            border-left: 5px solid #4facfe;
+            padding: 20px;
             border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
         }
-        
-        .user-info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .user-info-item {
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            padding: 1rem;
-            border-left: 4px solid var(--secondary-color);
-        }
-        
-        .user-info-label {
-            font-weight: 600;
-            color: var(--primary-color);
-            font-size: 0.9rem;
-            margin-bottom: 0.25rem;
-        }
-        
-        .user-info-value {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-        
-        .risk-badge {
-            padding: 0.5rem 1rem;
+        .match-badge {
+            font-size: 14px;
+            padding: 5px 15px;
             border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
         }
-        
-        .risk-low {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .risk-medium {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        
-        .risk-high {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        
-        .report-content {
-            white-space: pre-line;
-            line-height: 1.6;
-            font-size: 1.05rem;
-            padding: 1.5rem;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid var(--accent-color);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(90deg, var(--accent-color) 0%, #27ae60 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 0.8rem 2rem;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 0.8rem 2rem;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        
-        .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(108, 117, 125, 0.3);
-        }
-        
-        .ai-badge {
-            background-color: var(--secondary-color);
+        .match-high { background-color: #28a745; color: white; }
+        .match-medium { background-color: #ffc107; color: black; }
+        .match-low { background-color: #dc3545; color: white; }
+        .company-logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            padding: 0.3rem 0.8rem;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .back-btn {
+            background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+            border: none;
+            padding: 10px 30px;
+            border-radius: 50px;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            transform: scale(1.05);
+            color: white;
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
+        }
+        .progress-bar-custom {
+            height: 25px;
             border-radius: 15px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 100%);
         }
-        
-        .footer {
-            background-color: var(--primary-color);
+        .product-card {
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        .btn-outline-primary {
+            border-color: #0d6efd;
+            color: #0d6efd;
+        }
+        .btn-outline-primary:hover {
+            background-color: #0d6efd;
             color: white;
-            padding: 1.5rem 0;
-            margin-top: 3rem;
-            border-radius: 20px 20px 0 0;
         }
-        
-        .print-only {
-            display: none;
-        }
-        
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-            
-            .print-only {
-                display: block !important;
-            }
-            
-            body {
-                background: white !important;
-            }
-            
-            .card {
-                box-shadow: none !important;
-                border: 1px solid #ddd !important;
-            }
-            
-            .report-content {
-                border: 1px solid #ddd !important;
-                background-color: white !important;
-            }
-        }
-        
-        .system-note {
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-        
-        .response-time {
+        .btn-outline-secondary {
+            border-color: #6c757d;
             color: #6c757d;
-            font-size: 0.9rem;
+        }
+        .btn-outline-secondary:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-outline-success {
+            border-color: #198754;
+            color: #198754;
+        }
+        .btn-outline-success:hover {
+            background-color: #198754;
+            color: white;
         }
     </style>
 </head>
 <body>
-    <!-- 头部 -->
-    <header class="header">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1><i class="fas fa-file-alt me-2"></i>养老金规划报告</h1>
-                    <p class="lead mb-0">基于您的个人信息生成的专属规划</p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <a href="/" class="btn btn-light">
-                        <i class="fas fa-home me-1"></i>返回首页
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <!-- 返回按钮 -->
+                <div class="mb-4">
+                    <a href="/" class="back-btn">
+                        <i class="bi bi-arrow-left"></i> 重新规划
                     </a>
                 </div>
-            </div>
-        </div>
-    </header>
 
-    <!-- 主要内容 -->
-    <main class="container my-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <!-- 用户信息概览 -->
+                <!-- 标题卡片 -->
                 <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-user-circle me-2"></i>您的个人信息
+                    <div class="card-header header-bg">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <i class="bi bi-file-earmark-text fs-1"></i>
+                            </div>
+                            <div class="col">
+                                <h1 class="mb-0">📊 您的养老金规划报告</h1>
+                                <p class="mb-0">生成时间: {{ analysis_time }}</p>
+                                {% if system_note %}
+                                <p class="mb-0"><small>{{ system_note }}</small></p>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
+                </div>
+
+                <!-- 用户信息摘要 -->
+                <div class="card">
                     <div class="card-body">
-                        <div class="user-info-grid">
-                            <div class="user-info-item">
-                                <div class="user-info-label">年龄</div>
-                                <div class="user-info-value">{{ user_data.age }}岁</div>
-                            </div>
-                            <div class="user-info-item">
-                                <div class="user-info-label">年收入</div>
-                                <div class="user-info-value">{{ user_data.annual_income }}万元</div>
-                            </div>
-                            <div class="user-info-item">
-                                <div class="user-info-label">风险偏好</div>
-                                <div class="user-info-value">
-                                    {{ user_data.risk_tolerance }}
-                                    {% if user_data.risk_tolerance in ['保守型', '稳健型'] %}
-                                        <span class="risk-badge risk-low ms-2">低风险</span>
-                                    {% elif user_data.risk_tolerance == '平衡型' %}
-                                        <span class="risk-badge risk-medium ms-2">中等风险</span>
-                                    {% else %}
-                                        <span class="risk-badge risk-high ms-2">高风险</span>
-                                    {% endif %}
+                        <h3 class="mb-4 border-bottom pb-2">
+                            <i class="bi bi-person-badge me-2"></i>您的个人信息
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">年龄</h6>
+                                    <h3 class="mb-0">{{ user_data.age }}</h3>
+                                    <small class="text-muted">岁</small>
                                 </div>
                             </div>
-                            <div class="user-info-item">
-                                <div class="user-info-label">地区</div>
-                                <div class="user-info-value">{{ user_data.location }}</div>
+                            <div class="col-md-3 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">年收入</h6>
+                                    <h3 class="mb-0">{{ user_data.annual_income }}</h3>
+                                    <small class="text-muted">万元</small>
+                                </div>
                             </div>
-                            <div class="user-info-item">
-                                <div class="user-info-label">社保类型</div>
-                                <div class="user-info-value">{{ user_data.social_security }}</div>
+                            <div class="col-md-3 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">风险偏好</h6>
+                                    <h3 class="mb-0">{{ user_data.risk_tolerance }}</h3>
+                                    <small class="text-muted">
+                                        {% if user_data.risk_tolerance == '低' %}保守型
+                                        {% elif user_data.risk_tolerance == '中低' %}稳健型
+                                        {% elif user_data.risk_tolerance == '中' %}平衡型
+                                        {% elif user_data.risk_tolerance == '中高' %}成长型
+                                        {% elif user_data.risk_tolerance == '高' %}进取型
+                                        {% else %}{{ user_data.risk_tolerance }}
+                                        {% endif %}
+                                    </small>
+                                </div>
                             </div>
-                            <div class="user-info-item">
-                                <div class="user-info-label">计划退休年龄</div>
-                                <div class="user-info-value">{{ user_data.retirement_age }}岁</div>
+                            <div class="col-md-3 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">计划投资</h6>
+                                    <h3 class="mb-0">{{ user_data.investment_amount }}</h3>
+                                    <small class="text-muted">万元</small>
+                                </div>
                             </div>
-                            <div class="user-info-item">
-                                <div class="user-info-label">计划投资金额</div>
-                                <div class="user-info-value">{{ user_data.investment_amount }}万元</div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-4 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">所在地区</h6>
+                                    <h5 class="mb-0">{{ user_data.location }}</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">社保类型</h6>
+                                    <h5 class="mb-0">{{ user_data.social_security }}</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">退休年龄</h6>
+                                    <h5 class="mb-0">{{ user_data.retirement_age }}岁</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI分析报告 -->
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="mb-4 border-bottom pb-2">
+                            <i class="bi bi-chat-left-text me-2"></i>AI分析报告
+                        </h3>
+                        <div class="result-card">
+                            <div class="alert alert-info mb-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                数据来源：{{ source }}
+                            </div>
+                            <div class="report-content" style="white-space: pre-wrap; line-height: 1.6;">
+{{ report }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 示例产品推荐（静态示例） -->
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="mb-4 border-bottom pb-2">
+                            <i class="bi bi-star me-2"></i>推荐产品示例
+                        </h3>
+                        
+                        <!-- 产品1 -->
+                        <div class="card product-card mb-3">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="company-logo">
+                                            国
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h5 class="card-title mb-1">国寿鑫福年年养老年金保险</h5>
+                                        <p class="card-text text-muted mb-2">
+                                            中国人寿 | 养老年金 | 年交/趸交
+                                        </p>
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-3">匹配度:</span>
+                                            <div class="progress flex-grow-1 me-3" style="height: 20px;">
+                                                <div class="progress-bar progress-bar-custom"
+                                                     role="progressbar"
+                                                     style="width: 85%;"
+                                                     aria-valuenow="85"
+                                                     aria-valuemin="0" aria-valuemax="100">
+                                                    85%
+                                                </div>
+                                            </div>
+                                            <span class="badge match-high">
+                                                85分
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <h6>产品详情:</h6>
+                                        <ul class="list-unstyled">
+                                            <li><i class="bi bi-person me-2"></i>适合年龄: 18-65岁</li>
+                                            <li><i class="bi bi-shield me-2"></i>风险等级: 低风险</li>
+                                            <li><i class="bi bi-cash-coin me-2"></i>最低保费: 年交5000元起</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>推荐理由:</h6>
+                                        <ul>
+                                            <li>与您的风险偏好匹配度高</li>
+                                            <li>适合您的年龄阶段</li>
+                                            <li>公司实力强，收益稳定</li>
+                                            <li>提供终身养老保障</li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="response-time">
-                            <i class="far fa-clock me-1"></i>分析时间: {{ analysis_time }}
+                        <!-- 产品2 -->
+                        <div class="card product-card mb-3">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="company-logo">
+                                            太
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h5 class="card-title mb-1">太平鑫禧年年终身年金保险</h5>
+                                        <p class="card-text text-muted mb-2">
+                                            太平人寿 | 年金保险 | 月交/年交
+                                        </p>
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-3">匹配度:</span>
+                                            <div class="progress flex-grow-1 me-3" style="height: 20px;">
+                                                <div class="progress-bar progress-bar-custom"
+                                                     role="progressbar"
+                                                     style="width: 72%;"
+                                                     aria-valuenow="72"
+                                                     aria-valuemin="0" aria-valuemax="100">
+                                                    72%
+                                                </div>
+                                            </div>
+                                            <span class="badge match-medium">
+                                                72分
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <h6>产品详情:</h6>
+                                        <ul class="list-unstyled">
+                                            <li><i class="bi bi-person me-2"></i>适合年龄: 25-60岁</li>
+                                            <li><i class="bi bi-shield me-2"></i>风险等级: 中低风险</li>
+                                            <li><i class="bi bi-cash-coin me-2"></i>最低保费: 月交500元起</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>推荐理由:</h6>
+                                        <ul>
+                                            <li>缴费灵活，适合定期储蓄</li>
+                                            <li>提供身故保障</li>
+                                            <li>现金价值增长稳定</li>
+                                            <li>支持保单贷款功能</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning mt-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            注：以上为示例产品，实际产品推荐请咨询专业保险顾问。
                         </div>
                     </div>
                 </div>
-                
-                <!-- 系统提示（如果有） -->
-                {% if system_note %}
-                <div class="system-note">
-                    <i class="fas fa-info-circle me-2"></i>{{ system_note }}
-                </div>
-                {% endif %}
-                
-                <!-- AI分析报告 -->
+
+                <!-- 温馨提示 -->
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-chart-line me-2"></i>AI养老金规划分析报告
-                        </div>
-                        <div>
-                            <span class="ai-badge">
-                                <i class="fas fa-robot me-1"></i>{{ source }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="report-content">
-                            {{ report }}
+                    <div class="card-body">
+                        <h3 class="mb-4 border-bottom pb-2">
+                            <i class="bi bi-lightbulb me-2"></i>温馨提示
+                        </h3>
+                        <div class="result-card">
+                            <h5>养老规划重要提醒：</h5>
+                            <ol>
+                                <li>养老金规划是一个长期过程，建议定期（每3-5年）重新评估</li>
+                                <li>结合社保和企业年金，构建多层次的养老保障体系</li>
+                                <li>注意分散投资，不要将全部资金投入单一产品</li>
+                                <li>随着年龄增长，应逐步降低投资风险</li>
+                                <li>咨询专业理财顾问，根据个人情况调整方案</li>
+                            </ol>
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-clock me-2"></i>
+                                下次评估建议时间：{{ (now.year + 3) }}年{{ now.month }}月
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- 行动按钮 -->
-                <div class="card no-print">
+
+                <!-- 底部操作按钮 -->
+                <div class="card mt-4">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4 mb-2 mb-md-0">
-                                <a href="/" class="btn btn-secondary w-100">
-                                    <i class="fas fa-redo me-2"></i>重新规划
+                            <div class="col-md-4 mb-3">
+                                <a href="/" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-house me-2"></i>返回首页
                                 </a>
                             </div>
-                            <div class="col-md-4 mb-2 mb-md-0">
-                                <button onclick="window.print()" class="btn btn-outline-primary w-100">
-                                    <i class="fas fa-print me-2"></i>打印报告
+                            <div class="col-md-4 mb-3">
+                                <button onclick="window.print()" class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-printer me-2"></i>打印报告
                                 </button>
                             </div>
-                            <div class="col-md-4">
-                                <button onclick="shareReport()" class="btn btn-outline-success w-100">
-                                    <i class="fas fa-share-alt me-2"></i>分享报告
+                            <div class="col-md-4 mb-3">
+                                <button onclick="downloadReport()" class="btn btn-outline-success w-100">
+                                    <i class="bi bi-download me-2"></i>下载报告
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- 免责声明 -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-exclamation-triangle me-2"></i>重要声明
-                    </div>
-                    <div class="card-body">
-                        <p class="small">
-                            1. 本报告由AI智能生成，基于您提供的信息进行分析，结果仅供参考，不构成任何投资建议。<br>
-                            2. 投资有风险，入市需谨慎。养老金规划应考虑个人实际情况，建议咨询专业理财顾问。<br>
-                            3. 市场波动可能导致实际收益与预期不符，过往表现不代表未来收益。<br>
-                            4. 本系统不存储您的个人敏感信息，所有数据仅用于本次分析。<br>
-                            5. 养老金规划是一个长期过程，建议定期（每年）重新评估和调整。
-                        </p>
-                    </div>
-                </div>
-                
-                <!-- 打印专用标题 -->
-                <div class="print-only" style="display: none;">
-                    <h2 class="text-center">养老金规划报告</h2>
-                    <p class="text-center">生成时间: {{ analysis_time }}</p>
-                    <hr>
-                </div>
             </div>
         </div>
-    </main>
+    </div>
 
-    <!-- 页脚 -->
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5><i class="fas fa-piggy-bank me-2"></i>智能养老金规划系统</h5>
-                    <p class="small">专业AI分析，为您的退休生活保驾护航</p>
-                </div>
-                <div class="col-md-6 text-end">
-                    <p class="small mb-0">
-                        &copy; 2024 养老金规划系统. 所有建议仅供参考.<br>
-                        投资有风险，决策需谨慎.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- 自定义脚本 -->
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
     <script>
-        function shareReport() {
-            if (navigator.share) {
-                navigator.share({
-                    title: '我的养老金规划报告',
-                    text: '这是我的专属养老金规划报告，由智能AI系统生成。',
-                    url: window.location.href
-                })
-                .then(() => console.log('分享成功'))
-                .catch((error) => console.log('分享失败', error));
-            } else {
-                // 如果不支持Web Share API，则复制链接到剪贴板
-                const url = window.location.href;
-                navigator.clipboard.writeText(url).then(() => {
-                    alert('报告链接已复制到剪贴板，您可以分享给他人！');
-                }).catch(err => {
-                    console.error('复制失败:', err);
-                    alert('请手动复制当前页面URL进行分享。');
-                });
-            }
+        // 添加当前年份到模板变量（用于下次评估时间）
+        const now = new Date();
+        
+        function downloadReport() {
+            // 获取报告主要内容
+            const reportContent = document.querySelector('.container').innerHTML;
+            
+            // 创建HTML文件
+            const htmlContent = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>养老金规划报告 - {{ user_data.age }}岁{{ user_data.risk_tolerance }}用户</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .report-header {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .info-card {
+            background: white;
+            border-left: 5px solid #4facfe;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .product-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 14px;
+        }
+        @media print {
+            body { padding: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <h1>养老金规划报告</h1>
+        <p>生成时间: {{ analysis_time }}</p>
+        <p>用户ID: ${now.getTime()}</p>
+    </div>
+    
+    ${reportContent}
+    
+    <div class="footer">
+        <p>本报告由智能养老金规划系统生成，仅供参考。</p>
+        <p>投资有风险，决策需谨慎。建议咨询专业理财顾问。</p>
+        <p>© ${now.getFullYear()} 智能养老金规划系统</p>
+    </div>
+</body>
+</html>`;
+            
+            // 创建下载
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `养老金规划报告_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
         
-        // 添加打印样式
-        const style = document.createElement('style');
-        style.textContent = `
-            @media print {
-                body {
-                    font-size: 12pt !important;
-                    line-height: 1.5 !important;
-                }
-                
-                .card {
-                    break-inside: avoid !important;
-                    margin-bottom: 20px !important;
-                }
-                
-                .user-info-grid {
-                    grid-template-columns: repeat(2, 1fr) !important;
-                }
-                
-                .btn, .no-print {
-                    display: none !important;
-                }
-            }
-        `;
-        document.head.appendChild(style);
+        // 打印优化
+        window.addEventListener('beforeprint', function() {
+            document.querySelectorAll('.back-btn, .no-print').forEach(el => {
+                el.style.display = 'none';
+            });
+        });
+        
+        window.addEventListener('afterprint', function() {
+            document.querySelectorAll('.back-btn, .no-print').forEach(el => {
+                el.style.display = '';
+            });
+        });
     </script>
 </body>
 </html>
