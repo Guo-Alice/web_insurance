@@ -1,5 +1,5 @@
 """
-养老金规划系统 - 修复为正确的对话API调用格式
+养老金规划系统 - 修复版（修正inputs错误 + 延长超时）
 """
 from flask import Flask, render_template, request, jsonify, session
 import os
@@ -8,6 +8,7 @@ import requests
 import traceback
 from datetime import datetime
 import uuid
+import time  # 添加time模块用于计时
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "pension-planning-secret-key-2024")
@@ -16,10 +17,10 @@ app.secret_key = os.environ.get("SECRET_KEY", "pension-planning-secret-key-2024"
 DIFY_API_KEY = os.environ.get("DIFY_API_KEY", "app-rd6ag4AYRsDqurCZ4KokIbNI")
 DIFY_API_BASE_URL = "https://api.dify.ai/v1"
 
-# ========== 修复：使用对话API而不是工作流API ==========
+# ========== 修复：延长超时时间 + 修正inputs字段 ==========
 def call_dify_chat(user_data, user_query):
     """
-    调用Dify对话API（与你的成功示例一致）
+    调用Dify对话API - 修复inputs错误和超时时间
     """
     print(f"📤 调用Dify对话API...")
     
@@ -52,28 +53,34 @@ def call_dify_chat(user_data, user_query):
     # 用户查询问题
     user_query_text = user_query or f"请根据我的年龄{user_data.get('age')}岁、年收入{user_data.get('annual_income')}万元、风险偏好{user_data.get('risk_tolerance')}等条件，提供详细的养老金规划建议。"
     
-    # 构建请求数据（与你的成功示例完全一致）
+    # 关键修复1：inputs字段应该是自定义变量字典，而不是字符串！
+    # 关键修复2：延长超时时间到60秒（测试显示需要56秒）
     payload = {
-        "inputs": user_query_text,
-        "query": user_query_text,  # 用户的核心问题（必填）
-        "response_mode": "blocking",  # 阻塞模式
-        "user": f"user_{user_data.get('age', 'unknown')}_{uuid.uuid4().hex[:6]}"  # 唯一用户标识
+        "inputs": custom_inputs,  # ✅ 修复：使用字典而不是字符串
+        "query": user_query_text,
+        "response_mode": "blocking",
+        "user": f"user_{user_data.get('age', 'unknown')}_{uuid.uuid4().hex[:6]}"
     }
     
     print(f"📤 发送请求到Dify对话API...")
     print(f"  API URL: {api_url}")
     print(f"  自定义变量: {custom_inputs}")
-    print(f"  用户查询: {user_query_text}")
+    print(f"  用户查询: {user_query_text[:50]}...")
+    print(f"  超时设置: 60秒")
     
     try:
+        start_time = time.time()  # 记录开始时间
+        
+        # 关键修复：延长超时时间到60秒
         response = requests.post(
             api_url,
             headers=headers,
             json=payload,
-            timeout=30
+            timeout=60  # ✅ 修复：延长到60秒
         )
         
-        print(f"📥 Dify响应状态码: {response.status_code}")
+        elapsed = time.time() - start_time  # 计算耗时
+        print(f"📥 Dify响应状态码: {response.status_code} (耗时: {elapsed:.2f}秒)")
         
         if response.status_code == 200:
             try:
@@ -82,17 +89,17 @@ def call_dify_chat(user_data, user_query):
                 return extract_chat_response(result)
             except json.JSONDecodeError as e:
                 print(f"❌ 响应不是有效的JSON: {str(e)}")
-                print(f"   响应内容: {response.text[:500]}")
+                print(f"响应内容: {response.text[:500]}")
                 return get_fallback_response(user_data, f"Dify返回了非JSON响应: {response.text[:200]}")
         else:
             error_detail = response.text[:500] if response.text else "无详情"
             print(f"❌ Dify API调用失败: {response.status_code}")
-            print(f"   错误详情: {error_detail}")
+            print(f"错误详情: {error_detail}")
             return get_fallback_response(user_data, f"Dify API返回{response.status_code}错误")
             
     except requests.exceptions.Timeout:
-        print("❌ Dify API请求超时")
-        return get_fallback_response(user_data, "请求超时")
+        print("❌ Dify API请求超时（60秒）")
+        return get_fallback_response(user_data, "请求超时，请稍后重试")
     except requests.exceptions.ConnectionError:
         print("❌ 连接Dify API失败")
         return get_fallback_response(user_data, "连接失败")
@@ -106,15 +113,11 @@ def extract_chat_response(result):
     try:
         print(f"📋 解析Dify响应，响应结构: {list(result.keys())}")
         
-        # 调试：打印完整响应结构
-        if 'data' in result:
-            print(f"   data结构: {list(result['data'].keys())}")
-        
         # 从对话API的标准响应位置提取
-        # 1. 检查 data.answer
         if 'data' in result and 'answer' in result['data']:
             answer = result['data']['answer']
             if answer and str(answer).strip():
+                print(f"✅ 成功提取回答内容 (长度: {len(answer)} 字符)")
                 return {
                     "success": True,
                     "answer": str(answer).strip(),
@@ -122,22 +125,12 @@ def extract_chat_response(result):
                     "raw_response": result
                 }
         
-        # 2. 检查 data.message
-        if 'data' in result and 'message' in result['data']:
-            message = result['data']['message']
-            if message and str(message).strip():
-                return {
-                    "success": True,
-                    "answer": str(message).strip(),
-                    "source": "Dify AI对话模型",
-                    "raw_response": result
-                }
-        
-        # 3. 检查根级别的字段
+        # 检查其他可能的字段
         for key in ['answer', 'response', 'text', 'content', 'result', 'message']:
             if key in result and result[key]:
                 content = str(result[key]).strip()
                 if content:
+                    print(f"✅ 从字段 '{key}' 提取到回答内容")
                     return {
                         "success": True,
                         "answer": content,
@@ -145,10 +138,11 @@ def extract_chat_response(result):
                         "raw_response": result
                     }
         
-        # 如果都没找到，尝试从data的文本字段查找
+        # 如果以上都没找到，尝试从data的文本字段查找
         if 'data' in result:
             for key, value in result['data'].items():
                 if value and isinstance(value, (str, int, float)) and str(value).strip():
+                    print(f"✅ 从data.{key}提取到回答内容")
                     return {
                         "success": True,
                         "answer": str(value).strip(),
@@ -157,6 +151,7 @@ def extract_chat_response(result):
                     }
         
         # 如果以上都没找到，返回整个响应用于调试
+        print(f"⚠️ 未找到标准回答字段，返回原始响应")
         return {
             "success": True,
             "answer": f"Dify返回了数据但格式不标准。原始数据:\n\n{json.dumps(result, ensure_ascii=False, indent=2)[:1000]}",
@@ -294,7 +289,7 @@ def submit_form():
         # 用户查询问题（必填）
         user_query = data.get('user_query', '') or f"请根据我的年龄{user_data['age']}岁、年收入{user_data['annual_income']}万元、风险偏好{user_data['risk_tolerance']}等条件，提供详细的养老金规划建议。"
         
-        # 调用Dify对话API（使用正确的格式）
+        # 调用Dify对话API（使用修复后的格式）
         ai_result = call_dify_chat(user_data, user_query)
         
         # 保存到session
@@ -379,7 +374,7 @@ def health_check():
         "timestamp": datetime.now().isoformat(),
         "dify_configured": bool(DIFY_API_KEY and not DIFY_API_KEY.startswith("app-xxx")),
         "api_url": f"{DIFY_API_BASE_URL}/chat-messages",
-        "note": "使用对话API（/v1/chat-messages）"
+        "note": "使用对话API（/v1/chat-messages），超时60秒"
     })
 
 @app.route('/api/test-chat-api')
@@ -432,16 +427,19 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     
     print("=" * 60)
-    print("养老金规划系统启动")
+    print("养老金规划系统启动（修复版）")
     print(f"Dify API配置: {'✅ 已配置' if DIFY_API_KEY and not DIFY_API_KEY.startswith('app-xxx') else '❌ 未配置'}")
     print(f"使用对话API: {DIFY_API_BASE_URL}/chat-messages")
+    print(f"超时设置: 60秒")
     print(f"本地访问: http://localhost:{port}")
-    print("测试接口: http://localhost:{port}/api/test-chat-api")
     print("=" * 60)
-    print("⚠️ 重要提示: 使用对话API格式（与成功示例一致）")
-    print("   请求体结构:")
+    print("⚠️ 重要修复:")
+    print("   1. 修复inputs字段错误（从字符串改为字典）")
+    print("   2. 延长超时时间到60秒（测试显示需要56秒）")
+    print("=" * 60)
+    print("请求体结构:")
     print("   {")
-    print('     "inputs": {自定义变量字典},')
+    print('     "inputs": {自定义变量字典},  # ✅ 修复：字典格式')
     print('     "query": "用户问题",')
     print('     "response_mode": "blocking",')
     print('     "user": "user_id"')
@@ -451,5 +449,3 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=True)
 else:
     application = app
-
-
