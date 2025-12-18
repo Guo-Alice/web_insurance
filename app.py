@@ -424,13 +424,24 @@ def submit_form():
         session['ai_result'] = ai_result
         session['analysis_time'] = datetime.now().isoformat()
         
-        return jsonify({
+        # 构建返回结果
+        response_data = {
             "success": True,
             "message": "分析完成！",
             "redirect": "/results",
             "ai_source": ai_result.get('source', '系统'),
             "system_note": ai_result.get('system_note', '')
-        })
+        }
+        
+        # 如果是Dify响应，添加一些调试信息
+        if ai_result.get('source', '').startswith('Dify'):
+            response_data["debug"] = {
+                "dify_success": ai_result.get('success'),
+                "answer_length": len(str(ai_result.get('answer', ''))),
+                "raw_keys": list(ai_result.get('raw_response', {}).keys()) if ai_result.get('raw_response') else []
+            }
+        
+        return jsonify(response_data)
         
     except Exception as e:
         print(f"🔥 表单提交异常: {str(e)}")
@@ -556,6 +567,7 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=True)
 else:
     application = app
+
 
 
 
