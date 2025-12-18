@@ -56,6 +56,7 @@ def call_dify_workflow(user_data):
     payload = {
         "inputs": {
             "input": prompt.strip()  # 输入变量名为"input"
+            "files": []           # 空文件数组
         },
         "response_mode": "blocking",
         "user": f"user_{user_data.get('age', 'unknown')}"
@@ -111,6 +112,7 @@ def call_dify_workflow_alternative(user_data, error_reason):
     payload = {
         "inputs": {
             "input": simple_input
+            "files": []           # 空文件数组
         },
         "response_mode": "blocking",
         "user": f"user_{user_data.get('age', 'unknown')}"
@@ -584,3 +586,4 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=True)
 else:
     application = app
+
