@@ -42,7 +42,7 @@ def call_dify_workflow(user_data):
     input_string = f"年龄{user_data.get('age')}岁，收入{user_data.get('annual_income')}万元，风险{user_data.get('risk_tolerance')}"
     
     payload = {
-        "inputs": {
+        "input": {
             "input": input_string
         },
         "response_mode": "blocking",
@@ -364,4 +364,5 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=True)
 else:
     application = app
+
 
