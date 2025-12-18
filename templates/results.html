@@ -77,6 +77,11 @@
             transform: translateY(-5px);
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
         }
+        .report-content {
+            white-space: pre-line;
+            line-height: 1.6;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -99,7 +104,11 @@
                             </div>
                             <div class="col">
                                 <h1 class="mb-0">📊 您的养老金规划报告</h1>
-                                <p class="mb-0">生成时间: {{ dify_result.get('data', {}).get('created_at', '') | replace('T', ' ') | replace('Z', '') }}</p>
+                                <p class="mb-0">生成时间: {{ analysis_time }}</p>
+                                <p class="mb-0">分析来源: {{ source }}</p>
+                                {% if system_note %}
+                                <p class="mb-0 text-warning"><small>{{ system_note }}</small></p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -131,11 +140,11 @@
                                     <h6 class="text-muted mb-2">风险偏好</h6>
                                     <h3 class="mb-0">{{ user_data.risk_tolerance }}</h3>
                                     <small class="text-muted">
-                                        {% if user_data.risk_tolerance == '低' %}保守型{% endif %}
-                                        {% if user_data.risk_tolerance == '中低' %}稳健型{% endif %}
-                                        {% if user_data.risk_tolerance == '中' %}平衡型{% endif %}
-                                        {% if user_data.risk_tolerance == '中高' %}成长型{% endif %}
-                                        {% if user_data.risk_tolerance == '高' %}进取型{% endif %}
+                                        {% if user_data.risk_tolerance == '保守型' %}风险较低{% endif %}
+                                        {% if user_data.risk_tolerance == '稳健型' %}风险偏低{% endif %}
+                                        {% if user_data.risk_tolerance == '平衡型' %}中等风险{% endif %}
+                                        {% if user_data.risk_tolerance == '成长型' %}风险较高{% endif %}
+                                        {% if user_data.risk_tolerance == '进取型' %}高风险{% endif %}
                                     </small>
                                 </div>
                             </div>
@@ -151,143 +160,15 @@
                 </div>
 
                 <!-- AI生成的内容 -->
-                {% if dify_result and dify_result.data and dify_result.data.outputs %}
-                    {% set outputs = dify_result.data.outputs %}
-
-                    <!-- 显示AI生成的报告 -->
-                    {% if outputs.pension_report %}
-                    <div class="card">
-                        <div class="card-body">
-                            <h3 class="mb-4 border-bottom pb-2">
-                                <i class="bi bi-chat-left-text me-2"></i>AI分析报告
-                            </h3>
-                            <div class="result-card">
-                                {{ outputs.pension_report | safe }}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- 显示推荐产品（如果有） -->
-                    {% if outputs.recommendations %}
-                    <div class="card">
-                        <div class="card-body">
-                            <h3 class="mb-4 border-bottom pb-2">
-                                <i class="bi bi-star me-2"></i>推荐产品
-                            </h3>
-                            {% for rec in outputs.recommendations %}
-                            <div class="card product-card mb-3">
-                                <div class="card-body">
-                                    <div class="row align-items-center">
-                                        <div class="col-auto">
-                                            <div class="company-logo">
-                                                {{ rec.company[:2] if rec.company else '保' }}
-                                            </div>
-                                        </div>
-                                        <div class="col">
-                                            <h5 class="card-title mb-1">{{ rec.name }}</h5>
-                                            <p class="card-text text-muted mb-2">
-                                                {{ rec.company }} | {{ rec.insurance_type }} | {{ rec.payment_type }}
-                                            </p>
-                                            <div class="d-flex align-items-center">
-                                                <span class="me-3">匹配度:</span>
-                                                <div class="progress flex-grow-1 me-3" style="height: 20px;">
-                                                    <div class="progress-bar progress-bar-custom"
-                                                         role="progressbar"
-                                                         style="width: {{ rec.match_score }}%;"
-                                                         aria-valuenow="{{ rec.match_score }}"
-                                                         aria-valuemin="0" aria-valuemax="100">
-                                                        {{ rec.match_score }}%
-                                                    </div>
-                                                </div>
-                                                <span class="badge
-                                                    {% if rec.match_score >= 80 %}match-high
-                                                    {% elif rec.match_score >= 60 %}match-medium
-                                                    {% else %}match-low
-                                                    {% endif %}">
-                                                    {{ rec.match_score }}分
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mt-3">
-                                        <div class="col-md-6">
-                                            <h6>产品详情:</h6>
-                                            <ul class="list-unstyled">
-                                                <li><i class="bi bi-person me-2"></i>适合年龄: {{ rec.age_range }}</li>
-                                                <li><i class="bi bi-shield me-2"></i>风险等级: {{ rec.risk_level }}</li>
-                                                <li><i class="bi bi-cash-coin me-2"></i>最低保费: {{ rec.min_premium }}</li>
-                                            </ul>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <h6>推荐理由:</h6>
-                                            <ul>
-                                                {% for reason in rec.recommendation_reasons %}
-                                                <li>{{ reason }}</li>
-                                                {% endfor %}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- 显示其他输出 -->
-                    {% if outputs.summary %}
-                    <div class="card">
-                        <div class="card-body">
-                            <h3 class="mb-4 border-bottom pb-2">
-                                <i class="bi bi-list-check me-2"></i>规划摘要
-                            </h3>
-                            <div class="result-card">
-                                {{ outputs.summary | safe }}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if outputs.suggestions %}
-                    <div class="card">
-                        <div class="card-body">
-                            <h3 class="mb-4 border-bottom pb-2">
-                                <i class="bi bi-lightbulb me-2"></i>个性化建议
-                            </h3>
-                            <div class="result-card">
-                                {{ outputs.suggestions | safe }}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                {% else %}
-                <!-- 如果没有数据 -->
-                <div class="card">
-                    <div class="card-body text-center py-5">
-                        <i class="bi bi-exclamation-triangle text-warning fs-1 mb-3"></i>
-                        <h3>未获取到分析结果</h3>
-                        <p class="text-muted">可能是Dify工作流返回了空数据或格式不正确</p>
-                        <a href="/" class="btn btn-primary mt-3">
-                            <i class="bi bi-arrow-clockwise me-2"></i>重新规划
-                        </a>
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- 原始数据（调试用） -->
                 <div class="card">
                     <div class="card-body">
-                        <h3 class="mb-4 border-bottom pb-2" data-bs-toggle="collapse"
-                            data-bs-target="#rawData" style="cursor: pointer;">
-                            <i class="bi bi-code me-2"></i>原始数据（点击展开）
+                        <h3 class="mb-4 border-bottom pb-2">
+                            <i class="bi bi-chat-left-text me-2"></i>AI分析报告
                         </h3>
-                        <div id="rawData" class="collapse">
-                            <pre class="bg-light p-3 rounded" style="max-height: 400px; overflow: auto;">
-{{ dify_result | tojson(indent=2) }}
-                            </pre>
+                        <div class="result-card">
+                            <div class="report-content">
+                                {{ report | safe }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -331,11 +212,12 @@
         body { font-family: 'Microsoft YaHei', sans-serif; padding: 20px; }
         .card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
         .header-bg { background: #f8f9fa; padding: 15px; border-radius: 10px 10px 0 0; }
+        .report-content { white-space: pre-line; line-height: 1.6; }
     </style>
 </head>
 <body>
     <h1>养老金规划报告</h1>
-    <p>生成时间: {{ dify_result.get('data', {}).get('created_at', '') | replace('T', ' ') | replace('Z', '') }}</p>
+    <p>生成时间: ${new Date().toLocaleString()}</p>
     ${reportContent}
 </body>
 </html>
