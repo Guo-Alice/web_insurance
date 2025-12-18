@@ -27,26 +27,6 @@
             border-left: 5px solid #4facfe;
             padding: 20px;
         }
-        .match-badge {
-            font-size: 14px;
-            padding: 5px 15px;
-            border-radius: 20px;
-        }
-        .match-high { background-color: #28a745; color: white; }
-        .match-medium { background-color: #ffc107; color: black; }
-        .match-low { background-color: #dc3545; color: white; }
-        .company-logo {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-        }
         .back-btn {
             background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
             border: none;
@@ -64,23 +44,27 @@
             color: white;
             box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
         }
-        .progress-bar-custom {
-            height: 25px;
-            border-radius: 15px;
-            background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 100%);
-        }
-        .product-card {
-            transition: transform 0.3s ease;
-            cursor: pointer;
-        }
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        }
         .report-content {
             white-space: pre-line;
             line-height: 1.6;
             font-size: 16px;
+        }
+        .debug-info {
+            background-color: #f8f9fa;
+            border: 1px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .source-badge {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -105,10 +89,12 @@
                             <div class="col">
                                 <h1 class="mb-0">📊 您的养老金规划报告</h1>
                                 <p class="mb-0">生成时间: {{ analysis_time }}</p>
-                                <p class="mb-0">分析来源: {{ source }}</p>
-                                {% if system_note %}
-                                <p class="mb-0 text-warning"><small>{{ system_note }}</small></p>
-                                {% endif %}
+                                <div class="d-flex align-items-center mt-2">
+                                    <span class="source-badge me-3">{{ source }}</span>
+                                    {% if system_note %}
+                                    <span class="badge bg-warning text-dark">{{ system_note }}</span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -213,6 +199,8 @@
         .card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
         .header-bg { background: #f8f9fa; padding: 15px; border-radius: 10px 10px 0 0; }
         .report-content { white-space: pre-line; line-height: 1.6; }
+        .back-btn { display: none; }
+        .btn-group { display: none; }
     </style>
 </head>
 <body>
