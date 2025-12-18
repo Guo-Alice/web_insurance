@@ -1,5 +1,5 @@
 """
-养老金规划系统 - 修复Dify工作流输入格式问题版本
+养老金规划系统 - 修复同时支持文本和文件输入
 """
 from flask import Flask, render_template, request, jsonify, session
 import os
@@ -15,12 +15,12 @@ app.secret_key = os.environ.get("SECRET_KEY", "pension-planning-secret-key-2024"
 # Dify配置
 DIFY_API_KEY = os.environ.get("DIFY_API_KEY", "app-rd6ag4AYRsDqurCZ4KokIbNI")
 WORKFLOW_ID = os.environ.get("WORKFLOW_ID", "bgvzc16WFu14fsnl")
-DIFY_API_URL = "https://api.dify.ai/v1"
+DIFY_API_BASE_URL = "https://api.dify.ai/v1"
 
-# ========== 修复Dify API调用 ==========
+# ========== 修复输入格式 - 同时支持文本和文件 ==========
 def call_dify_workflow(user_data):
     """
-    调用Dify工作流API - 使用正确的输入格式
+    调用Dify工作流API - 同时发送文本和文件输入
     """
     print(f"📤 调用Dify工作流 {WORKFLOW_ID}")
     
@@ -33,118 +33,109 @@ def call_dify_workflow(user_data):
         print("⚠️ Workflow ID未配置，使用标准模型")
         return get_fallback_response(user_data, "Workflow ID未配置")
     
+    # 关键修复：正确的Authorization格式 - 包含大括号！
     headers = {
-        "Authorization": f"Bearer {DIFY_API_KEY}",
+        "Authorization": f"Bearer {{{DIFY_API_KEY}}}",
         "Content-Type": "application/json"
     }
     
-    # 根据你的Dify工作流配置，输入变量名为"input"
-    # 创建清晰的提示词格式
-    prompt = f"""
-用户养老金规划需求：
-1. 年龄：{user_data.get('age')}岁
-2. 年收入：{user_data.get('annual_income')}万元
-3. 风险偏好：{user_data.get('risk_tolerance')}
-4. 所在地区：{user_data.get('location', '全国')}
-5. 社保类型：{user_data.get('social_security', '城镇职工')}
-6. 计划退休年龄：{user_data.get('retirement_age', 60)}岁
-7. 计划投资金额：{user_data.get('investment_amount', 10)}万元
-
-请基于以上信息，提供一份全面的养老金规划建议。
-"""
+    # 正确的API端点
+    api_url = f"{DIFY_API_BASE_URL}/workflows/{WORKFLOW_ID}/run"
+    print(f"✅ 正确API URL: {api_url}")
     
-    payload = {
+    # 准备用户数据 - 纯文本格式
+    input_text = f"年龄:{user_data.get('age')}岁，年收入:{user_data.get('annual_income')}万元，风险偏好:{user_data.get('risk_tolerance')}，地区:{user_data.get('location', '全国')}，社保类型:{user_data.get('social_security', '城镇职工')}，计划退休年龄:{user_data.get('retirement_age', 60)}岁，计划投资金额:{user_data.get('investment_amount', 10)}万元。请提供养老金规划建议。"
+    
+    # 尝试三种可能的输入格式：
+    
+    # 格式1: 同时包含text和files（files为空数组）
+    print("🔄 尝试格式1: 文本+空文件数组...")
+    payload_format1 = {
         "inputs": {
-            "input": prompt.strip()  # 输入变量名为"input"
+            "input": input_text,  # 文本输入
             "files": []           # 空文件数组
         },
         "response_mode": "blocking",
         "user": f"user_{user_data.get('age', 'unknown')}"
     }
     
-    print(f"发送到Dify的payload: {json.dumps(payload, ensure_ascii=False)[:300]}...")
+    result = try_dify_request(api_url, headers, payload_format1, "格式1")
+    if result and result.get('success'):
+        return result
     
-    try:
-        response = requests.post(
-            f"{DIFY_API_URL}/workflows/run",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        
-        print(f"Dify响应状态: {response.status_code}")
-        
-        if response.status_code == 200:
-            result = response.json()
-            print("✅ Dify工作流调用成功")
-            print(f"响应结构: {list(result.keys())}")
-            return extract_dify_response(result)
-            
-        elif response.status_code == 400:
-            print(f"❌ Dify 400错误详情: {response.text[:500]}")
-            # 尝试备选方案
-            return call_dify_workflow_alternative(user_data, "400错误")
-            
-        else:
-            print(f"❌ Dify API错误 {response.status_code}: {response.text[:200]}")
-            return get_fallback_response(user_data, f"Dify API错误 {response.status_code}")
-            
-    except requests.exceptions.Timeout:
-        print("⏰ Dify API超时")
-        return get_fallback_response(user_data, "API超时")
-    except Exception as e:
-        print(f"❌ 调用Dify异常: {str(e)}")
-        traceback.print_exc()
-        return get_fallback_response(user_data, f"异常: {str(e)}")
-
-def call_dify_workflow_alternative(user_data, error_reason):
-    """备选方案 - 使用更简单的输入格式"""
-    print("🔄 尝试备选输入格式...")
-    
-    headers = {
-        "Authorization": f"Bearer {DIFY_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    # 备选方案：使用更简单的文本格式
-    simple_input = f"年龄{user_data.get('age')}岁 收入{user_data.get('annual_income')}万元 风险{user_data.get('risk_tolerance')} 地区{user_data.get('location')} 社保{user_data.get('social_security')} 退休{user_data.get('retirement_age')}岁 投资{user_data.get('investment_amount')}万元"
-    
-    payload = {
+    # 格式2: 只有文本输入（不带files字段）
+    print("🔄 尝试格式2: 只有文本输入...")
+    payload_format2 = {
         "inputs": {
-            "input": simple_input
-            "files": []           # 空文件数组
+            "input": input_text  # 只有文本输入
         },
         "response_mode": "blocking",
         "user": f"user_{user_data.get('age', 'unknown')}"
     }
     
-    print(f"备选方案payload: {json.dumps(payload, ensure_ascii=False)}")
+    result = try_dify_request(api_url, headers, payload_format2, "格式2")
+    if result and result.get('success'):
+        return result
+    
+    # 格式3: 使用文件格式（如果需要文件）
+    print("🔄 尝试格式3: 文件格式...")
+    payload_format3 = {
+        "inputs": {
+            "input": [  # 文件格式（数组）
+                {
+                    "transfer_method": "local_file",
+                    "upload_file_id": "",
+                    "type": "text/plain"
+                }
+            ]
+        },
+        "response_mode": "blocking",
+        "user": f"user_{user_data.get('age', 'unknown')}"
+    }
+    
+    result = try_dify_request(api_url, headers, payload_format3, "格式3")
+    if result and result.get('success'):
+        return result
+    
+    # 如果都失败，使用备选方案
+    return get_fallback_response(user_data, "所有格式尝试都失败")
+
+def try_dify_request(api_url, headers, payload, format_name):
+    """尝试发送请求到Dify"""
+    print(f"📤 尝试{format_name}...")
+    print(f"  Payload: {json.dumps(payload, ensure_ascii=False)[:300]}...")
     
     try:
         response = requests.post(
-            f"{DIFY_API_URL}/workflows/run",
+            api_url,
             headers=headers,
             json=payload,
             timeout=20
         )
         
+        print(f"📥 {format_name}响应状态: {response.status_code}")
+        
         if response.status_code == 200:
-            result = response.json()
-            print("✅ 备选方案调用成功")
-            return extract_dify_response(result)
+            try:
+                result = response.json()
+                print(f"✅ {format_name}调用成功！")
+                print(f"   响应结构: {list(result.keys())}")
+                return extract_dify_response(result)
+            except json.JSONDecodeError:
+                print(f"❌ {format_name}返回了非JSON响应")
+                return None
         else:
-            print(f"❌ 备选方案失败: {response.status_code}")
-            return get_fallback_response(user_data, f"Dify API错误 {response.status_code}（备选方案）")
+            error_msg = response.text[:500] if response.text else "无详情"
+            print(f"❌ {format_name}失败: {response.status_code} - {error_msg}")
+            return None
             
     except Exception as e:
-        print(f"❌ 备选方案异常: {str(e)}")
-        return get_fallback_response(user_data, f"备选方案异常: {str(e)}")
+        print(f"❌ {format_name}请求异常: {str(e)}")
+        return None
 
 def extract_dify_response(result):
     """提取Dify响应内容"""
     try:
-        print(f"解析Dify响应，数据结构: {list(result.keys())}")
-        
         # 检查是否有错误
         if 'error' in result:
             error_msg = result.get('error', {})
@@ -156,51 +147,30 @@ def extract_dify_response(result):
                 "source": "Dify API错误"
             }
         
-        # 尝试从不同位置提取响应
-        if 'data' in result:
-            data = result['data']
-            
-            # 检查 outputs
-            if 'outputs' in data:
-                outputs = data['outputs']
-                print(f"找到outputs字段: {list(outputs.keys())}")
-                
-                # 尝试所有可能的输出键
-                possible_keys = ['answer', 'output', 'response', 'text', 'content', 'result', 'report', 'pension_report', 'recommendation']
-                for key in possible_keys:
-                    if key in outputs and outputs[key]:
-                        content = outputs[key]
-                        if isinstance(content, dict):
-                            # 如果是字典，转换为字符串
-                            content = json.dumps(content, ensure_ascii=False, indent=2)
-                        return {
-                            "success": True,
-                            "answer": str(content).strip(),
-                            "source": "Dify AI工作流",
-                            "raw_response": result
-                        }
-                
-                # 如果没有找到标准键，尝试所有键
-                for key in outputs.keys():
-                    if outputs[key] and str(outputs[key]).strip():
-                        return {
-                            "success": True,
-                            "answer": str(outputs[key]).strip(),
-                            "source": "Dify AI工作流",
-                            "raw_response": result
-                        }
-            
-            # 如果直接有answer字段
-            if 'answer' in data:
-                return {
-                    "success": True,
-                    "answer": str(data['answer']).strip(),
-                    "source": "Dify AI工作流",
-                    "raw_response": result
-                }
+        # 从常见位置提取响应
+        # 1. 检查 data.outputs
+        if 'data' in result and 'outputs' in result['data']:
+            outputs = result['data']['outputs']
+            for key, value in outputs.items():
+                if value and str(value).strip():
+                    return {
+                        "success": True,
+                        "answer": str(value).strip(),
+                        "source": "Dify AI工作流",
+                        "raw_response": result
+                    }
         
-        # 如果没有找到预期的结构，检查是否有其他结构
-        for key in ['answer', 'response', 'text', 'content', 'result', 'output']:
+        # 2. 检查 data.answer
+        if 'data' in result and 'answer' in result['data']:
+            return {
+                "success": True,
+                "answer": str(result['data']['answer']).strip(),
+                "source": "Dify AI工作流",
+                "raw_response": result
+            }
+        
+        # 3. 检查根级别的字段
+        for key in ['answer', 'response', 'text', 'content', 'result']:
             if key in result and result[key]:
                 return {
                     "success": True,
@@ -209,23 +179,20 @@ def extract_dify_response(result):
                     "raw_response": result
                 }
         
-        # 如果都没有找到，返回整个响应用于调试
-        response_str = json.dumps(result, ensure_ascii=False, indent=2)
+        # 如果都没找到，返回整个响应用于调试
         return {
             "success": True,
-            "answer": f"Dify工作流返回了数据，但格式不匹配。原始响应:\n\n{response_str}",
+            "answer": f"Dify返回了数据但格式未知。原始数据:\n\n{json.dumps(result, ensure_ascii=False, indent=2)}",
             "source": "Dify工作流（原始响应）",
             "raw_response": result
         }
         
     except Exception as e:
-        print(f"解析Dify响应异常: {str(e)}")
-        traceback.print_exc()
+        print(f"解析响应异常: {str(e)}")
         return {
             "success": False,
-            "answer": f"解析Dify响应失败: {str(e)}\n\n原始数据:\n{json.dumps(result, ensure_ascii=False)[:500]}",
-            "source": "系统错误",
-            "raw_response": result
+            "answer": f"解析响应失败: {str(e)}",
+            "source": "系统错误"
         }
 
 def get_fallback_response(user_data, error_reason=""):
@@ -251,25 +218,27 @@ def generate_standard_advice(user_data):
         risk = user_data.get('risk_tolerance', '平衡型')
         investment = float(user_data.get('investment_amount', 10))
         
-        # 根据风险偏好确定资产配置
-        if risk == '保守型':
-            allocation = "银行存款(50%) + 国债(30%) + 货币基金(20%)"
-            expected_return = "3-4%"
-        elif risk == '稳健型':
+        # 风险偏好映射
+        if risk in ['低', '中低']:
+            mapped_risk = '稳健型'
             allocation = "债券基金(40%) + 年金保险(40%) + 平衡基金(20%)"
             expected_return = "4-6%"
-        elif risk == '平衡型':
+        elif risk in ['中', '平衡型']:
+            mapped_risk = '平衡型'
             allocation = "指数基金(40%) + 混合基金(30%) + 年金保险(30%)"
             expected_return = "6-8%"
-        elif risk == '成长型':
+        elif risk in ['中高', '高', '成长型', '进取型']:
+            mapped_risk = '成长型'
             allocation = "股票基金(50%) + 指数基金(30%) + 年金保险(20%)"
             expected_return = "8-10%"
-        else:  # 进取型
-            allocation = "股票基金(60%) + 行业基金(30%) + 年金保险(10%)"
-            expected_return = "10-12%"
+        else:
+            mapped_risk = '平衡型'
+            allocation = "指数基金(40%) + 混合基金(30%) + 年金保险(30%)"
+            expected_return = "6-8%"
         
         # 计算退休积蓄
-        years_to_retire = max(1, 65 - age)
+        retirement_age = int(user_data.get('retirement_age', 60))
+        years_to_retire = max(1, retirement_age - age)
         monthly_saving = income * 0.15
         
         advice = f"""
@@ -279,7 +248,7 @@ def generate_standard_advice(user_data):
 👤 客户基本信息
 • 年龄：{age}岁
 • 年收入：{income}万元
-• 风险偏好：{risk}
+• 风险偏好：{risk} ({mapped_risk})
 • 计划投资金额：{investment}万元
 • 预计退休年龄：{user_data.get('retirement_age', 60)}岁
 
@@ -306,7 +275,138 @@ def generate_standard_advice(user_data):
     except Exception as e:
         return f"生成建议时出错：{str(e)}"
 
-# ========== Flask 路由 ==========
+# ========== 添加测试端点 ==========
+@app.route('/api/test-input-formats')
+def test_input_formats():
+    """测试不同的输入格式"""
+    headers = {
+        "Authorization": f"Bearer {{{DIFY_API_KEY}}}",
+        "Content-Type": "application/json"
+    }
+    
+    api_url = f"{DIFY_API_BASE_URL}/workflows/{WORKFLOW_ID}/run"
+    
+    test_cases = [
+        {
+            "name": "格式1: 文本+空文件数组",
+            "payload": {
+                "inputs": {
+                    "input": "测试养老金规划",
+                    "files": []
+                },
+                "response_mode": "blocking",
+                "user": "user_test"
+            }
+        },
+        {
+            "name": "格式2: 只有文本输入",
+            "payload": {
+                "inputs": {
+                    "input": "测试养老金规划"
+                },
+                "response_mode": "blocking",
+                "user": "user_test"
+            }
+        },
+        {
+            "name": "格式3: 只有空文件数组",
+            "payload": {
+                "inputs": {
+                    "input": [],  # 空数组
+                    "files": []
+                },
+                "response_mode": "blocking",
+                "user": "user_test"
+            }
+        },
+        {
+            "name": "格式4: 文件格式（无文件ID）",
+            "payload": {
+                "inputs": {
+                    "input": [
+                        {
+                            "transfer_method": "local_file",
+                            "upload_file_id": "",
+                            "type": "text/plain"
+                        }
+                    ]
+                },
+                "response_mode": "blocking",
+                "user": "user_test"
+            }
+        },
+        {
+            "name": "格式5: 混合格式",
+            "payload": {
+                "inputs": {
+                    "text_input": "测试养老金规划",  # 可能的另一个输入名
+                    "file_input": []
+                },
+                "response_mode": "blocking",
+                "user": "user_test"
+            }
+        }
+    ]
+    
+    results = []
+    
+    for test in test_cases:
+        try:
+            print(f"\n🔍 测试: {test['name']}")
+            
+            response = requests.post(
+                api_url,
+                headers=headers,
+                json=test['payload'],
+                timeout=15
+            )
+            
+            result = {
+                "test_name": test['name'],
+                "status_code": response.status_code,
+                "request_payload": test['payload']
+            }
+            
+            if response.status_code == 200:
+                try:
+                    response_json = response.json()
+                    result["response"] = response_json
+                    result["success"] = True
+                    
+                    # 提取输出
+                    if 'data' in response_json and 'outputs' in response_json['data']:
+                        outputs = response_json['data']['outputs']
+                        result["outputs_keys"] = list(outputs.keys())
+                        
+                        for key, value in outputs.items():
+                            if value:
+                                result["output_preview"] = str(value)[:200]
+                                break
+                except:
+                    result["response_text"] = response.text[:500]
+            else:
+                result["error"] = response.text[:500]
+                result["success"] = False
+                
+        except Exception as e:
+            result = {
+                "test_name": test['name'],
+                "error": str(e),
+                "success": False
+            }
+        
+        results.append(result)
+    
+    return jsonify({
+        "timestamp": datetime.now().isoformat(),
+        "workflow_id": WORKFLOW_ID,
+        "api_url": api_url,
+        "authorization_header": headers['Authorization'],
+        "test_results": results,
+        "note": "测试不同的输入格式，找出正确的工作流输入结构"
+    })
+
+# ========== 主要路由 ==========
 @app.route('/')
 def index():
     """显示主页"""
@@ -360,14 +460,6 @@ def submit_form():
             "ai_source": ai_result.get('source', '系统'),
             "system_note": ai_result.get('system_note', '')
         }
-        
-        # 如果是Dify响应，添加一些调试信息
-        if ai_result.get('source', '').startswith('Dify'):
-            response_data["debug"] = {
-                "dify_success": ai_result.get('success'),
-                "answer_length": len(str(ai_result.get('answer', ''))),
-                "raw_keys": list(ai_result.get('raw_response', {}).keys()) if ai_result.get('raw_response') else []
-            }
         
         return jsonify(response_data)
         
@@ -428,7 +520,6 @@ def show_results():
                          system_note=ai_result.get('system_note', ''),
                          analysis_time=formatted_time)
 
-# ========== API 端点 ==========
 @app.route('/api/health')
 def health_check():
     """健康检查"""
@@ -437,119 +528,10 @@ def health_check():
         "service": "养老金规划系统",
         "timestamp": datetime.now().isoformat(),
         "dify_configured": bool(DIFY_API_KEY and not DIFY_API_KEY.startswith("app-xxx")),
-        "workflow_configured": bool(WORKFLOW_ID)
-    })
-
-@app.route('/api/test-workflow')
-def test_workflow():
-    """测试工作流调用"""
-    test_data = {
-        "age": "35",
-        "annual_income": "25.0",
-        "risk_tolerance": "平衡型",
-        "location": "北京",
-        "social_security": "城镇职工",
-        "retirement_age": "60",
-        "investment_amount": "12.0"
-    }
-    
-    result = call_dify_workflow(test_data)
-    
-    return jsonify({
-        "test_time": datetime.now().isoformat(),
-        "test_data": test_data,
-        "test_result": {
-            "success": result.get('success', False),
-            "source": result.get('source', '未知'),
-            "answer_preview": str(result.get('answer', ''))[:200] + "..." if result.get('answer') else "无内容",
-            "system_note": result.get('system_note', '')
-        },
-        "dify_config": {
-            "api_key_configured": bool(DIFY_API_KEY and not DIFY_API_KEY.startswith("app-xxx")),
-            "workflow_id": WORKFLOW_ID,
-            "api_url": DIFY_API_URL
-        }
-    })
-
-@app.route('/api/dify-debug')
-def dify_debug():
-    """Dify调试接口"""
-    headers = {
-        "Authorization": f"Bearer {DIFY_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    # 多个测试用例
-    test_cases = [
-        {
-            "name": "简单测试",
-            "input": "你好，请帮我规划养老金"
-        },
-        {
-            "name": "基本数据测试",
-            "input": "年龄35岁，收入25万元，风险平衡型"
-        },
-        {
-            "name": "详细数据测试",
-            "input": "用户年龄35岁，年收入25万元，风险偏好平衡型，所在地北京，社保类型城镇职工，计划60岁退休，计划投资12万元。请提供养老金规划建议。"
-        }
-    ]
-    
-    results = []
-    
-    for test in test_cases:
-        payload = {
-            "inputs": {
-                "input": test["input"]
-            },
-            "response_mode": "blocking",
-            "user": "user_test"
-        }
-        
-        try:
-            response = requests.post(
-                f"{DIFY_API_URL}/workflows/run",
-                headers=headers,
-                json=payload,
-                timeout=15
-            )
-            
-            result = {
-                "test_name": test["name"],
-                "status_code": response.status_code,
-                "input": test["input"]
-            }
-            
-            if response.status_code == 200:
-                response_json = response.json()
-                result["response"] = response_json
-                
-                # 提取可能的输出
-                if 'data' in response_json and 'outputs' in response_json['data']:
-                    outputs = response_json['data']['outputs']
-                    result["output_keys"] = list(outputs.keys())
-                    
-                    for key in ['answer', 'output', 'response', 'text']:
-                        if key in outputs and outputs[key]:
-                            result["output_preview"] = str(outputs[key])[:200]
-                            break
-            else:
-                result["error"] = response.text[:500]
-                
-        except Exception as e:
-            result = {
-                "test_name": test["name"],
-                "error": str(e),
-                "status_code": 0
-            }
-        
-        results.append(result)
-    
-    return jsonify({
-        "timestamp": datetime.now().isoformat(),
-        "workflow_id": WORKFLOW_ID,
-        "api_key_configured": bool(DIFY_API_KEY and not DIFY_API_KEY.startswith("app-xxx")),
-        "test_results": results
+        "workflow_configured": bool(WORKFLOW_ID),
+        "api_url": f"{DIFY_API_BASE_URL}/workflows/{WORKFLOW_ID}/run",
+        "auth_format": f"Bearer {{{DIFY_API_KEY[:10]}...}}",
+        "note": "尝试多种输入格式，包括文本+空文件数组"
     })
 
 # ========== 错误处理 ==========
@@ -580,10 +562,17 @@ if __name__ == '__main__':
     print("养老金规划系统启动")
     print(f"Dify API配置: {'✅ 已配置' if DIFY_API_KEY and not DIFY_API_KEY.startswith('app-xxx') else '❌ 未配置'}")
     print(f"工作流ID: {'✅ ' + WORKFLOW_ID if WORKFLOW_ID else '❌ 未配置'}")
+    print(f"正确的API URL: {DIFY_API_BASE_URL}/workflows/{WORKFLOW_ID}/run")
+    print(f"正确的认证头: Bearer {{{DIFY_API_KEY}}}")
     print(f"本地访问: http://localhost:{port}")
+    print("测试接口: http://localhost:{port}/api/test-input-formats")
+    print("=" * 60)
+    print("⚠️ 重要提示: 现在尝试多种输入格式")
+    print("   1. 文本+空文件数组")
+    print("   2. 只有文本输入")
+    print("   3. 文件格式")
     print("=" * 60)
     
     app.run(host='0.0.0.0', port=port, debug=True)
 else:
     application = app
-
