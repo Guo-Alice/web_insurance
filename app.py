@@ -15,7 +15,7 @@ app.config['SESSION_TYPE'] = 'filesystem'
 
 # Dify配置
 DIFY_API_KEY = os.environ.get("DIFY_API_KEY", "app-rd6ag4AYRsDqurCZ4KokIbNI")  # 在环境变量中设置
-WORKFLOW_ID = os.environ.get("WORKFLOW_ID", "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
+WORKFLOW_ID = os.environ.get("WORKFLOW_ID", "bgvzc16WFu14fsnl")
 DIFY_API_URL = "https://api.dify.ai/v1"
 
 
@@ -225,6 +225,21 @@ def get_recommended_products(age, risk):
     return base_products
 
 # ========== Flask 路由 ==========
+# 在现有路由基础上添加这个路由
+@app.route('/health')
+def health_direct():
+    """兼容性健康检查（同时支持 /health 和 /api/health）"""
+    return jsonify({
+        "status": "healthy",
+        "service": "养老金规划系统",
+        "endpoints": {
+            "/api/health": "健康检查",
+            "/api/test-dify": "测试Dify连接",
+            "/submit": "提交表单(POST)",
+            "/results": "查看结果"
+        }
+    })
+    
 @app.route('/')
 def index():
     """显示主页"""
@@ -410,3 +425,4 @@ if __name__ == '__main__':
 else:
     # Vercel需要这个
     application = app
+
