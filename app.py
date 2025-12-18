@@ -1,10 +1,12 @@
 """
-养老金规划系统 - 修复Dify 400错误版本
+养老金规划系统 - 最终修复版
+修复所有语法错误，确保应用正常运行
 """
 from flask import Flask, render_template, request, jsonify, session
 import os
 import json
 import requests
+import traceback
 from datetime import datetime
 import uuid
 
@@ -37,22 +39,22 @@ def call_dify_workflow(user_data):
         "Content-Type": "application/json"
     }
     
-    # ========== 尝试不同的输入格式 ==========
+    # 尝试不同的输入格式
     # 方法1：自然语言格式（最可能被接受）
-   # input_string = (
-    #    f"用户养老金规划需求：\n"
-     #   f"年龄：{user_data.get('age')}岁\n"
-      #  f"年收入：{user_data.get('annual_income')}万元\n"
-       # f"风险偏好：{user_data.get('risk_tolerance')}\n"
-        #f"所在地区：{user_data.get('location')}\n"
-        #f"社保类型：{user_data.get('social_security')}\n"
-        #f"计划退休年龄：{user_data.get('retirement_age')}岁\n"
-        #f"计划投资金额：{user_data.get('investment_amount')}万元\n"
-        #f"请提供详细的养老金规划建议。"
-    #)
+    # input_string = (
+    #     f"用户养老金规划需求：\n"
+    #     f"年龄：{user_data.get('age')}岁\n"
+    #     f"年收入：{user_data.get('annual_income')}万元\n"
+    #     f"风险偏好：{user_data.get('risk_tolerance')}\n"
+    #     f"所在地区：{user_data.get('location')}\n"
+    #     f"社保类型：{user_data.get('social_security')}\n"
+    #     f"计划退休年龄：{user_data.get('retirement_age')}岁\n"
+    #     f"计划投资金额：{user_data.get('investment_amount')}万元\n"
+    #     f"请提供详细的养老金规划建议。"
+    # )
     
     # 方法2：简洁格式（如果工作流期望简单文本）
-     input_string = f"年龄{user_data.get('age')}岁，收入{user_data.get('annual_income')}万元，风险{user_data.get('risk_tolerance')}"
+    input_string = f"年龄{user_data.get('age')}岁，收入{user_data.get('annual_income')}万元，风险{user_data.get('risk_tolerance')}"
     
     # 方法3：JSON格式（如果工作流期望结构化数据）
     # input_string = json.dumps(user_data, ensure_ascii=False)
@@ -152,34 +154,35 @@ def get_fallback_response(user_data, error_reason=""):
 
 def generate_standard_advice(user_data):
     """生成标准养老金建议"""
-    age = int(user_data.get('age', 30))
-    income = float(user_data.get('annual_income', 20))
-    risk = user_data.get('risk_tolerance', '平衡型')
-    investment = float(user_data.get('investment_amount', 10))
-    
-    # 根据风险偏好确定资产配置
-    if risk == '保守型':
-        allocation = "银行存款(50%) + 国债(30%) + 货币基金(20%)"
-        expected_return = "3-4%"
-    elif risk == '稳健型':
-        allocation = "债券基金(40%) + 年金保险(40%) + 平衡基金(20%)"
-        expected_return = "4-6%"
-    elif risk == '平衡型':
-        allocation = "指数基金(40%) + 混合基金(30%) + 年金保险(30%)"
-        expected_return = "6-8%"
-    elif risk == '成长型':
-        allocation = "股票基金(50%) + 指数基金(30%) + 年金保险(20%)"
-        expected_return = "8-10%"
-    else:  # 进取型
-        allocation = "股票基金(60%) + 行业基金(30%) + 年金保险(10%)"
-        expected_return = "10-12%"
-    
-    # 计算退休积蓄
-    years_to_retire = max(1, 65 - age)
-    monthly_saving = income * 0.15  # 假设储蓄15%
-    total_savings = monthly_saving * 12 * years_to_retire
-    
-    advice = f"""
+    try:
+        age = int(user_data.get('age', 30))
+        income = float(user_data.get('annual_income', 20))
+        risk = user_data.get('risk_tolerance', '平衡型')
+        investment = float(user_data.get('investment_amount', 10))
+        
+        # 根据风险偏好确定资产配置
+        if risk == '保守型':
+            allocation = "银行存款(50%) + 国债(30%) + 货币基金(20%)"
+            expected_return = "3-4%"
+        elif risk == '稳健型':
+            allocation = "债券基金(40%) + 年金保险(40%) + 平衡基金(20%)"
+            expected_return = "4-6%"
+        elif risk == '平衡型':
+            allocation = "指数基金(40%) + 混合基金(30%) + 年金保险(30%)"
+            expected_return = "6-8%"
+        elif risk == '成长型':
+            allocation = "股票基金(50%) + 指数基金(30%) + 年金保险(20%)"
+            expected_return = "8-10%"
+        else:  # 进取型
+            allocation = "股票基金(60%) + 行业基金(30%) + 年金保险(10%)"
+            expected_return = "10-12%"
+        
+        # 计算退休积蓄
+        years_to_retire = max(1, 65 - age)
+        monthly_saving = income * 0.15  # 假设储蓄15%
+        total_savings = monthly_saving * 12 * years_to_retire
+        
+        advice = f"""
 🏦 **智能养老金规划报告**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -209,8 +212,9 @@ def generate_standard_advice(user_data):
 ⚠️ **风险提示**
 投资有风险，以上建议仅供参考。具体投资决策请咨询专业理财顾问。
 """
-    
-    return advice
+        return advice
+    except Exception as e:
+        return f"生成建议时出错：{str(e)}"
 
 # ========== Flask 路由 ==========
 @app.route('/')
@@ -270,7 +274,6 @@ def submit_form():
         
     except Exception as e:
         print(f"🔥 表单提交异常: {str(e)}")
-        import traceback
         traceback.print_exc()
         
         return jsonify({
@@ -282,7 +285,23 @@ def submit_form():
 def show_results():
     """显示结果页面"""
     if 'user_data' not in session:
-        return render_template('error.html', message="请先提交表单")
+        return """
+        <html>
+        <head>
+            <title>错误</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        </head>
+        <body>
+            <div class="container mt-5">
+                <div class="alert alert-warning">
+                    <h4>请先提交表单</h4>
+                    <p>您还没有提交养老金规划信息。</p>
+                    <a href="/" class="btn btn-primary">返回首页填写信息</a>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
     
     user_data = session.get('user_data', {})
     ai_result = session.get('ai_result', {})
@@ -410,7 +429,6 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     print(f"🔥 500错误详情: {str(error)}")
-    import traceback
     traceback.print_exc()
     
     return jsonify({
