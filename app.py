@@ -38,18 +38,30 @@ def call_dify_workflow(user_data):
         "Content-Type": "application/json"
     }
     
-    # 简洁格式
-    input_string = f"年龄{user_data.get('age')}岁，收入{user_data.get('annual_income')}万元，风险{user_data.get('risk_tolerance')}"
+    # 构建JSON格式的输入数据
+    # 根据你的Dify工作流配置，输入变量名为"input"
+    input_data = {
+        "age": user_data.get('age', '30'),
+        "annual_income": user_data.get('annual_income', '20'),
+        "risk_tolerance": user_data.get('risk_tolerance', '平衡型'),
+        "location": user_data.get('location', '全国'),
+        "social_security": user_data.get('social_security', '城镇职工'),
+        "retirement_age": user_data.get('retirement_age', '60'),
+        "investment_amount": user_data.get('investment_amount', '10')
+    }
+    
+    # 将JSON对象转换为字符串作为input值
+    input_string = json.dumps(input_data, ensure_ascii=False)
     
     payload = {
-        "input": {
-            "input": input_string
+        "inputs": {
+            "input": input_string  # 变量名为"input"
         },
         "response_mode": "blocking",
         "user": f"user_{user_data.get('age', 'unknown')}"
     }
     
-    print(f"发送到Dify的数据: {json.dumps(payload, ensure_ascii=False)[:300]}...")
+    print(f"发送到Dify的数据: {json.dumps(payload, ensure_ascii=False, indent=2)}")
     
     try:
         response = requests.post(
@@ -64,14 +76,18 @@ def call_dify_workflow(user_data):
         if response.status_code == 200:
             result = response.json()
             print("✅ Dify工作流调用成功")
+            print(f"Dify响应前500字符: {json.dumps(result, ensure_ascii=False)[:500]}...")
             return extract_dify_response(result)
             
         elif response.status_code == 400:
-            print(f"❌ Dify 400错误详情: {response.text[:500]}")
-            return get_fallback_response(user_data, "Dify工作流输入格式不匹配")
+            error_detail = response.text[:500] if response.text else "无详情"
+            print(f"❌ Dify 400错误详情: {error_detail}")
+            # 尝试另一种格式
+            return call_dify_workflow_alternative(user_data, error_detail)
             
         else:
-            print(f"❌ Dify API错误 {response.status_code}: {response.text[:200]}")
+            error_detail = response.text[:200] if response.text else "无详情"
+            print(f"❌ Dify API错误 {response.status_code}: {error_detail}")
             return get_fallback_response(user_data, f"Dify API错误 {response.status_code}")
             
     except requests.exceptions.Timeout:
@@ -79,7 +95,61 @@ def call_dify_workflow(user_data):
         return get_fallback_response(user_data, "API超时")
     except Exception as e:
         print(f"❌ 调用Dify异常: {str(e)}")
+        traceback.print_exc()
         return get_fallback_response(user_data, f"异常: {str(e)}")
+
+
+def call_dify_workflow_alternative(user_data, previous_error):
+    """尝试另一种输入格式"""
+    print("🔄 尝试备选输入格式...")
+    
+    headers = {
+        "Authorization": f"Bearer {DIFY_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    # 备选方案1: 使用纯文本格式
+    input_string = f"年龄:{user_data.get('age')}岁,收入:{user_data.get('annual_income')}万元,风险:{user_data.get('risk_tolerance')},地区:{user_data.get('location')},社保:{user_data.get('social_security')},退休年龄:{user_data.get('retirement_age')}岁,投资:{user_data.get('investment_amount')}万元"
+    
+    # 备选方案2: 使用结构化JSON作为input的值（而不是字符串）
+    # input_data = {
+    #     "年龄": user_data.get('age'),
+    #     "年收入": user_data.get('annual_income'),
+    #     "风险偏好": user_data.get('risk_tolerance'),
+    #     "地区": user_data.get('location'),
+    #     "社保类型": user_data.get('social_security'),
+    #     "退休年龄": user_data.get('retirement_age'),
+    #     "投资金额": user_data.get('investment_amount')
+    # }
+    # input_string = json.dumps(input_data, ensure_ascii=False)
+    
+    payload = {
+        "inputs": {
+            "input": input_string
+        },
+        "response_mode": "blocking",
+        "user": f"user_{user_data.get('age', 'unknown')}"
+    }
+    
+    print(f"备选方案发送到Dify的数据: {json.dumps(payload, ensure_ascii=False)[:300]}...")
+    
+    try:
+        response = requests.post(
+            f"{DIFY_API_URL}/workflows/run",
+            headers=headers,
+            json=payload,
+            timeout=20
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print("✅ Dify工作流调用成功（备选方案）")
+            return extract_dify_response(result)
+        else:
+            return get_fallback_response(user_data, f"Dify API错误 {response.status_code}（备选方案）")
+            
+    except Exception as e:
+        return get_fallback_response(user_data, f"备选方案异常: {str(e)}")
 
 def extract_dify_response(result):
     """提取Dify响应内容"""
@@ -364,5 +434,6 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=True)
 else:
     application = app
+
 
 
