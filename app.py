@@ -273,6 +273,7 @@ def show_results():
     
     user_data = session.get('user_data', {})
     ai_result = session.get('ai_result', {})
+    analysis_time = session.get('analysis_time', '')
     
     # 提取报告内容
     report = ai_result.get('answer', '未获取到分析结果')
@@ -283,7 +284,8 @@ def show_results():
                          user_data=user_data,
                          report=report,
                          source=ai_result.get('source', '标准模型'),
-                         system_note=ai_result.get('system_note', ''))
+                         system_note=ai_result.get('system_note', ''),
+                         analysis_time=analysis_time)
 
 # ========== API 端点 ==========
 @app.route('/api/health')
@@ -362,3 +364,4 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=True)
 else:
     application = app
+
