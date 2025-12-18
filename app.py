@@ -54,6 +54,7 @@ def call_dify_chat(user_data, user_query):
     
     # 构建请求数据（与你的成功示例完全一致）
     payload = {
+        "inputs": user_query_text,
         "query": user_query_text,  # 用户的核心问题（必填）
         "response_mode": "blocking",  # 阻塞模式
         "user": f"user_{user_data.get('age', 'unknown')}_{uuid.uuid4().hex[:6]}"  # 唯一用户标识
@@ -450,4 +451,5 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=True)
 else:
     application = app
+
 
