@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>养老金规划结果</title>
-    <!-- 使用CDN作为主方案，本地作为备选方案 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" 
-          integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet" 
-          integrity="sha384-Q8adN1VkCUrN2q6coK0/L4KvRf8H4c3ePJV4BvhynJ6QZTU//8N5FJgCe6d6U+/7I" crossorigin="anonymous">
-    <!-- 备用本地样式，防止CDN失败 -->
+    <!-- 使用本地资源，修复路径 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
     <style>
         body {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -518,18 +515,19 @@
         </div>
     </div>
 
-    <!-- 使用CDN作为主方案 -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" 
-            integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <!-- 使用本地JS，修复路径 -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     
-    <!-- 备用本地JS（如果CDN失败） -->
     <script>
         // 检查Bootstrap是否加载成功
         if (typeof bootstrap === 'undefined') {
-            console.log('Bootstrap CDN加载失败，尝试加载本地版本');
-            var script = document.createElement('script');
-            script.src = '/static/js/bootstrap.bundle.min.js';
-            document.head.appendChild(script);
+            console.log('Bootstrap加载失败，请检查静态资源路径');
+            // 显示备用提示
+            const alerts = document.querySelectorAll('.alert');
+            if (alerts.length > 0) {
+                alerts[0].insertAdjacentHTML('afterend', 
+                    '<div class="alert alert-warning">Bootstrap样式加载失败，部分样式可能无法正常显示</div>');
+            }
         }
     </script>
     
@@ -551,8 +549,7 @@
             const reportContent = document.querySelector('.container').innerHTML;
             
             // 创建HTML文件
-            const htmlContent = `
-<!DOCTYPE html>
+            const htmlContent = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -651,7 +648,7 @@
             var isBootstrapLoaded = false;
             for (var i = 0; i < document.styleSheets.length; i++) {
                 var sheet = document.styleSheets[i];
-                if (sheet.href && sheet.href.includes('bootstrap')) {
+                if (sheet.href && (sheet.href.includes('bootstrap') || sheet.href.includes('/static/'))) {
                     isBootstrapLoaded = true;
                     break;
                 }
