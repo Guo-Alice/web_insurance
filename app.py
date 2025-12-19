@@ -1,6 +1,6 @@
 """
-养老金规划系统 - 完整修复版
-调用Dify API生成报告，使用本地静态资源
+养老金规划系统 - 优化版
+增加Dify API超时时间，优化错误处理
 """
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import os
@@ -8,6 +8,7 @@ import json
 import requests
 from datetime import datetime
 import uuid
+import traceback
 
 # 获取当前文件的绝对路径
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -18,9 +19,10 @@ app = Flask(__name__,
             template_folder=os.path.join(BASE_DIR, 'templates'))
 app.secret_key = os.environ.get("SECRET_KEY", "pension-secret-key-2024")
 
-# Dify配置 - 请确保这里的API Key是正确的
+# Dify配置 - 增加超时时间到70秒
 DIFY_API_KEY = "app-rd6ag4AYRsDqurCZ4KokIbNI"
 DIFY_API_BASE_URL = "https://api.dify.ai/v1"
+DIFY_TIMEOUT = 70  # 增加到70秒
 
 # 确保目录存在
 static_dir = os.path.join(BASE_DIR, 'static')
@@ -31,7 +33,7 @@ os.makedirs(js_dir, exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, 'templates'), exist_ok=True)
 
 def call_dify_api(user_data):
-    """调用Dify API生成养老金规划报告"""
+    """调用Dify API生成养老金规划报告 - 增加超时时间"""
     try:
         if not DIFY_API_KEY or DIFY_API_KEY.startswith("app-xxx"):
             raise Exception("API Key未配置或无效")
@@ -42,7 +44,7 @@ def call_dify_api(user_data):
             "Content-Type": "application/json"
         }
         
-        # 构建用户查询
+        # 构建更详细的用户查询
         user_query = f"""
 请为以下用户生成详细的养老金规划建议：
 
@@ -61,8 +63,10 @@ def call_dify_api(user_data):
 3. 每月储蓄建议
 4. 风险提示
 5. 长期规划策略
+6. 针对该年龄段的特殊建议
+7. 推荐的具体金融产品类型
 
-请以专业、清晰的方式呈现建议。
+请以专业、清晰的方式呈现建议，尽量详细。
 """
         
         payload = {
@@ -80,17 +84,22 @@ def call_dify_api(user_data):
             "user": f"user_{uuid.uuid4().hex[:8]}"
         }
         
+        print(f"正在调用Dify API，超时时间：{DIFY_TIMEOUT}秒...")
         response = requests.post(
             api_url,
             headers=headers,
             json=payload,
-            timeout=30
+            timeout=DIFY_TIMEOUT  # 使用70秒超时
         )
+        
+        print(f"Dify API响应状态码：{response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
+            print(f"Dify API响应数据：{json.dumps(result, ensure_ascii=False)[:500]}...")
+            
             # 提取回答内容
-            answer = result.get('answer') or result.get('data', {}).get('answer')
+            answer = result.get('answer') or result.get('data', {}).get('answer') or result.get('data', {}).get('message')
             if answer:
                 return {
                     "success": True,
@@ -98,18 +107,40 @@ def call_dify_api(user_data):
                     "source": "Dify AI智能分析"
                 }
             else:
+                print(f"API响应中没有找到答案，原始响应：{json.dumps(result, ensure_ascii=False)[:1000]}")
                 raise Exception("API响应中没有找到答案")
         else:
-            raise Exception(f"API请求失败: {response.status_code}")
+            error_msg = f"API请求失败: {response.status_code} - {response.text[:200]}"
+            print(error_msg)
+            raise Exception(error_msg)
             
+    except requests.exceptions.Timeout:
+        error_msg = f"Dify API调用超时（{DIFY_TIMEOUT}秒）"
+        print(error_msg)
+        return {
+            "success": True,
+            "answer": generate_fallback_report(user_data),
+            "source": "本地智能分析引擎（Dify API调用超时）",
+            "error": error_msg
+        }
+    except requests.exceptions.ConnectionError as e:
+        error_msg = f"Dify API连接错误: {str(e)}"
+        print(error_msg)
+        return {
+            "success": True,
+            "answer": generate_fallback_report(user_data),
+            "source": "本地智能分析引擎（Dify API连接错误）",
+            "error": error_msg
+        }
     except Exception as e:
-        print(f"Dify API调用失败: {str(e)}")
-        # 如果API调用失败，使用本地备用方案
+        error_msg = f"Dify API调用失败: {str(e)}"
+        print(f"Dify API调用失败: {error_msg}")
+        traceback.print_exc()  # 打印完整的错误堆栈
         return {
             "success": True,
             "answer": generate_fallback_report(user_data),
             "source": "本地智能分析引擎（Dify API暂时不可用）",
-            "error": str(e)
+            "error": error_msg
         }
 
 def generate_fallback_report(user_data):
@@ -120,6 +151,8 @@ def generate_fallback_report(user_data):
         risk = user_data.get('risk_tolerance', '中')
         investment = float(user_data.get('investment_amount', 12))
         retirement_age = int(user_data.get('retirement_age', 60))
+        location = user_data.get('location', '全国')
+        social_security = user_data.get('social_security', '城镇职工')
         
         risk_mapping = {
             '低': ('保守型', '债券基金(50%) + 年金保险(40%) + 货币基金(10%)', '4-6%'),
@@ -132,6 +165,8 @@ def generate_fallback_report(user_data):
         mapped_risk, allocation, expected_return = risk_mapping.get(risk, risk_mapping['中'])
         years_to_retire = max(1, retirement_age - age)
         monthly_saving = income * 0.15
+        total_saving = monthly_saving * 12 * years_to_retire
+        total_asset = total_saving + investment * 1.5
         
         report = f"""
 🏦 智能养老金规划报告（本地生成）
@@ -144,20 +179,23 @@ def generate_fallback_report(user_data):
 • 计划投资金额：{investment:.1f}万元
 • 计划退休年龄：{retirement_age}岁
 • 距离退休还有：{years_to_retire}年
+• 地区/社保类型：{location}/{social_security}
 
 📊 资产配置建议（根据风险偏好定制）
 {allocation}
 
 💰 预期收益与储蓄分析
 • 建议每月储蓄：{monthly_saving:.1f}万元（年收入15%）
-• 退休前累计储蓄：{monthly_saving * 12 * years_to_retire:.1f}万元
+• 退休前累计储蓄：{total_saving:.1f}万元
 • 预计投资增值：{investment * 0.5:.1f}万元
+• 退休时预计总资产：{total_asset:.1f}万元
 • 预计年化收益率：{expected_return}
 
 💡 核心规划建议
 1. 复利效应：{age}岁开始规划，利用时间优势积累财富
 2. 投资节奏：退休前10年逐步降低风险，债券/保险占比提升
 3. 产品选择：优先选择费率低、长期稳定的指数基金和年金保险
+4. 风险控制：单一产品投资不超过总资产30%，每年复盘调整
 
 ⚠️ 风险提示
 • 以上收益为理论测算，实际收益受市场波动影响
@@ -166,7 +204,7 @@ def generate_fallback_report(user_data):
 """
         return report
     except Exception as e:
-        return f"生成报告时出错：{str(e)}"
+        return f"生成备用报告时出错：{str(e)}"
 
 # ========== Flask路由 ==========
 @app.route('/')
@@ -182,7 +220,7 @@ def favicon():
 
 @app.route('/submit', methods=['POST'])
 def submit_form():
-    """处理表单提交 - 调用Dify API"""
+    """处理表单提交 - 调用Dify API，增加超时时间"""
     try:
         # 1. 获取表单数据
         data = request.form.to_dict()
@@ -207,9 +245,9 @@ def submit_form():
         }
         
         # 4. 调用Dify API
-        print("正在调用Dify API...")
+        print("正在调用Dify API，请耐心等待...")
         ai_result = call_dify_api(user_data)
-        print("Dify API调用完成")
+        print(f"Dify API调用结果: {ai_result.get('success', False)}")
         
         # 5. 保存到Session
         session['user_data'] = user_data
@@ -225,9 +263,10 @@ def submit_form():
         
     except Exception as e:
         print(f"表单处理异常: {str(e)}")
+        traceback.print_exc()
         return jsonify({
             "success": False,
-            "message": f"系统错误: {str(e)}"
+            "message": f"系统错误: {str(e)[:100]}"
         })
 
 @app.route('/results')
@@ -253,10 +292,22 @@ def show_results():
         error=error
     )
 
+@app.route('/health')
+def health_check():
+    """健康检查接口"""
+    return jsonify({
+        "status": "healthy",
+        "service": "养老金规划系统",
+        "dify_api_configured": bool(DIFY_API_KEY and not DIFY_API_KEY.startswith('app-xxx')),
+        "timeout": DIFY_TIMEOUT,
+        "timestamp": datetime.now().isoformat()
+    })
+
 if __name__ == '__main__':
     print("="*80)
     print("养老金规划系统启动")
     print(f"Dify API Key: {'已配置' if DIFY_API_KEY and not DIFY_API_KEY.startswith('app-xxx') else '未配置或无效'}")
+    print(f"API超时时间: {DIFY_TIMEOUT}秒")
     print(f"静态文件目录: {static_dir}")
     print(f"本地访问: http://localhost:5000")
     print("="*80)
