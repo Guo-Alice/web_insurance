@@ -1,7 +1,7 @@
 """
-养老金规划系统 - 修正静态文件路径版
+养老金规划系统 - 修复静态资源路径版
 """
-from flask import Flask, render_template, request, jsonify, session, send_from_directory, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, send_from_directory, redirect, url_for, send_file
 import os
 import json
 import requests
@@ -10,11 +10,14 @@ from datetime import datetime
 import uuid
 import time
 
-# 创建 Flask 应用，明确指定静态文件夹路径
+# 获取当前文件的绝对路径
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# 创建 Flask 应用，使用绝对路径
 app = Flask(__name__, 
-            static_folder='static', 
+            static_folder=os.path.join(BASE_DIR, 'static'),
             static_url_path='/static',
-            template_folder='templates')  # 明确指定模板文件夹
+            template_folder=os.path.join(BASE_DIR, 'templates'))
 app.secret_key = os.environ.get("SECRET_KEY", "pension-planning-secret-key-2024")
 
 # Dify配置
@@ -24,11 +27,18 @@ DIFY_TIMEOUT = 70
 DIFY_DISABLE_PROXY = True
 
 # 确保目录存在
-os.makedirs('static/css', exist_ok=True)
-os.makedirs('static/js', exist_ok=True)
-os.makedirs('static/fonts', exist_ok=True)
-os.makedirs('templates', exist_ok=True)
+static_dir = os.path.join(BASE_DIR, 'static')
+css_dir = os.path.join(static_dir, 'css')
+js_dir = os.path.join(static_dir, 'js')
+fonts_dir = os.path.join(static_dir, 'fonts')
+templates_dir = os.path.join(BASE_DIR, 'templates')
 
+os.makedirs(css_dir, exist_ok=True)
+os.makedirs(js_dir, exist_ok=True)
+os.makedirs(fonts_dir, exist_ok=True)
+os.makedirs(templates_dir, exist_ok=True)
+
+# 简化Dify相关函数（保持你原有的函数不变）
 def call_dify_chat(user_data, user_query):
     """调用Dify对话API"""
     try:
@@ -219,8 +229,12 @@ def index():
 @app.route('/favicon.ico')
 def favicon():
     """提供favicon"""
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    favicon_path = os.path.join(static_dir, 'favicon.ico')
+    if os.path.exists(favicon_path):
+        return send_file(favicon_path, mimetype='image/vnd.microsoft.icon')
+    # 返回一个默认的favicon
+    return send_file(os.path.join(BASE_DIR, 'static', 'default_favicon.ico'), 
+                     mimetype='image/vnd.microsoft.icon')
 
 @app.route('/submit', methods=['POST'])
 def submit_form():
@@ -309,11 +323,21 @@ def health_check():
         "timestamp": datetime.now().isoformat()
     })
 
-# 静态文件路由 - Flask会自动处理/static/路径
-@app.route('/static/<path:filename>')
-def static_files(filename):
-    """提供静态文件"""
-    return send_from_directory(app.static_folder, filename)
+# 静态文件路由
+@app.route('/static/css/<path:filename>')
+def serve_css(filename):
+    """提供CSS文件"""
+    return send_from_directory(css_dir, filename)
+
+@app.route('/static/js/<path:filename>')
+def serve_js(filename):
+    """提供JS文件"""
+    return send_from_directory(js_dir, filename)
+
+@app.route('/static/fonts/<path:filename>')
+def serve_fonts(filename):
+    """提供字体文件"""
+    return send_from_directory(fonts_dir, filename)
 
 # 错误处理
 @app.errorhandler(404)
@@ -331,26 +355,29 @@ def internal_error(error):
 if __name__ == '__main__':
     print("="*80)
     print("养老金规划系统启动")
-    print(f"静态文件目录: {app.static_folder}")
-    print(f"静态URL路径: {app.static_url_path}")
+    print(f"项目根目录: {BASE_DIR}")
+    print(f"静态文件目录: {static_dir}")
+    print(f"CSS目录: {css_dir}")
+    print(f"JS目录: {js_dir}")
+    print(f"字体目录: {fonts_dir}")
     print(f"本地访问: http://localhost:5000")
     print("="*80)
     
     # 检查静态文件是否存在
     static_files_to_check = [
-        'css/bootstrap.min.css',
-        'css/bootstrap-icons.css',
-        'js/bootstrap.bundle.min.js',
-        'fonts/bootstrap-icons.woff2',
-        'fonts/bootstrap-icons.woff'
+        ('css/bootstrap.min.css', css_dir),
+        ('css/bootstrap-icons.css', css_dir),
+        ('js/bootstrap.bundle.min.js', js_dir),
+        ('fonts/bootstrap-icons.woff2', fonts_dir),
+        ('fonts/bootstrap-icons.woff', fonts_dir)
     ]
     
-    for file in static_files_to_check:
-        file_path = os.path.join('static', file)
+    for file_rel_path, check_dir in static_files_to_check:
+        file_path = os.path.join(check_dir, os.path.basename(file_rel_path))
         if os.path.exists(file_path):
             print(f"✅ 找到: {file_path}")
         else:
             print(f"❌ 缺失: {file_path}")
-            print(f"   请确保将相关文件下载到 {file_path}")
+            print(f"   请下载文件到: {file_path}")
     
     app.run(host='0.0.0.0', port=5000, debug=True)
