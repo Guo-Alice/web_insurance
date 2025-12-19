@@ -3,67 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统提示</title>
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/css/bootstrap-icons.css" rel="stylesheet">
+    <title>{{ title }}</title>
     <style>
         body {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             display: flex;
-            align-items: center;
             justify-content: center;
-            font-family: 'Microsoft YaHei', sans-serif;
+            align-items: center;
+            padding: 20px;
         }
-        .error-card {
-            max-width: 500px;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            border: none;
+        .error-container {
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            text-align: center;
         }
-        .error-header {
-            background: linear-gradient(90deg, #ff6b6b 0%, #ff8e53 100%);
-            color: white;
-            border-radius: 15px 15px 0 0;
-            padding: 30px;
-        }
-        .error-icon {
-            font-size: 60px;
+        h1 {
+            color: #dc3545;
+            font-size: 48px;
             margin-bottom: 20px;
         }
-        .btn-primary {
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: inline-block;
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            border: none;
+            color: white;
             padding: 12px 30px;
-            font-size: 18px;
             border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
             transition: all 0.3s ease;
         }
-        .btn-primary:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="error-card">
-            <div class="error-header text-center">
-                <div class="error-icon">
-                    <i class="bi bi-exclamation-triangle"></i>
-                </div>
-                <h2>系统提示</h2>
-            </div>
-            <div class="card-body p-5 text-center">
-                <h4 class="mb-3">{{ message or "系统处理异常" }}</h4>
-                <p class="text-muted mb-4">请返回首页重新操作</p>
-                <div class="mt-4">
-                    <a href="/" class="btn btn-primary">
-                        <i class="bi bi-house me-2"></i>返回首页
-                    </a>
-                </div>
-            </div>
-        </div>
+    <div class="error-container">
+        <h1>{{ title }}</h1>
+        <h2>抱歉，出现了问题</h2>
+        <p>{{ message }}</p>
+        <a href="/" class="btn">返回首页</a>
     </div>
 </body>
 </html>
