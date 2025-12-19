@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>养老金规划结果</title>
-    <!-- 使用本地资源，修复路径 -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
+    <!-- 使用本地Bootstrap CSS -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
     <style>
         body {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -88,64 +87,10 @@
             transform: translateY(-5px);
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
         }
-        .btn-outline-primary {
-            border-color: #0d6efd;
-            color: #0d6efd;
-            text-decoration: none;
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-align: center;
-            cursor: pointer;
-            border: 1px solid;
-        }
-        .btn-outline-primary:hover {
-            background-color: #0d6efd;
-            color: white;
-        }
-        .btn-outline-secondary {
-            border-color: #6c757d;
-            color: #6c757d;
-            text-decoration: none;
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-align: center;
-            cursor: pointer;
-            border: 1px solid;
-        }
-        .btn-outline-secondary:hover {
-            background-color: #6c757d;
-            color: white;
-        }
-        .btn-outline-success {
-            border-color: #198754;
-            color: #198754;
-            text-decoration: none;
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-align: center;
-            cursor: pointer;
-            border: 1px solid;
-        }
-        .btn-outline-success:hover {
-            background-color: #198754;
-            color: white;
-        }
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 15px;
-        }
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -15px;
-        }
-        .col {
-            padding: 0 15px;
-            flex: 1;
         }
         .text-center {
             text-align: center;
@@ -202,32 +147,6 @@
             padding-left: 0;
             list-style: none;
         }
-        /* 备用字体图标样式（防止Bootstrap Icons加载失败） */
-        .bi::before {
-            content: "";
-            display: inline-block;
-            width: 1em;
-            height: 1em;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            margin-right: 0.5rem;
-        }
-        .bi-arrow-left::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/></svg>'); }
-        .bi-file-earmark-text::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/><path fill="currentColor" d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg>'); }
-        .bi-person-badge::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M6.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path fill="currentColor" d="M4.5 0A2.5 2.5 0 0 0 2 2.5V14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2.5A2.5 2.5 0 0 0 11.5 0h-7zM3 2.5A1.5 1.5 0 0 1 4.5 1h7A1.5 1.5 0 0 1 13 2.5v10.795a4.2 4.2 0 0 0-.776-.492C11.392 12.387 10.063 12 8 12s-3.392.387-4.224.803a4.2 4.2 0 0 0-.776.492V2.5z"/></svg>'); }
-        .bi-chat-left-text::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M14 1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4.414A2 2 0 0 0 3 11.586l-2 2V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12.793a.5.5 0 0 0 .854.353l2.853-2.853A1 1 0 0 1 4.414 12H14a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path fill="currentColor" d="M3 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 6a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 6zm0 2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>'); }
-        .bi-star::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.565.565 0 0 0-.163-.505L1.71 6.745l4.052-.576a.525.525 0 0 0 .393-.288L8 2.223l1.847 3.658a.525.525 0 0 0 .393.288l4.052.575-2.906 2.77a.565.565 0 0 0-.163.506l.694 3.957-3.686-1.894a.503.503 0 0 0-.461 0z"/></svg>'); }
-        .bi-person::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>'); }
-        .bi-shield::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"/></svg>'); }
-        .bi-cash-coin::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M12 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm-1 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg>'); }
-        .bi-lightbulb::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A5.984 5.984 0 0 1 2 6zm6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1z"/></svg>'); }
-        .bi-house::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5ZM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5 5 5Z"/></svg>'); }
-        .bi-printer::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/><path fill="currentColor" d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/></svg>'); }
-        .bi-download::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>'); }
-        .bi-info-circle::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path fill="currentColor" d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>'); }
-        .bi-clock::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path fill="currentColor" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>'); }
-        .bi-exclamation-triangle::before { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="currentColor" d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/><path fill="currentColor" d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/></svg>'); }
     </style>
 </head>
 <body>
@@ -237,7 +156,7 @@
                 <!-- 返回按钮 -->
                 <div class="mb-4">
                     <a href="/" class="back-btn">
-                        <i class="bi bi-arrow-left"></i> 重新规划
+                        ← 重新规划
                     </a>
                 </div>
 
@@ -246,14 +165,11 @@
                     <div class="card-header header-bg">
                         <div class="row align-items-center">
                             <div class="col-auto">
-                                <i class="bi bi-file-earmark-text fs-1"></i>
+                                <span style="font-size: 2rem;">📊</span>
                             </div>
                             <div class="col">
-                                <h1 class="mb-0">📊 您的养老金规划报告</h1>
+                                <h1 class="mb-0">您的养老金规划报告</h1>
                                 <p class="mb-0">生成时间: {{ analysis_time }}</p>
-                                {% if system_note %}
-                                <p class="mb-0"><small>{{ system_note }}</small></p>
-                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -263,7 +179,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h3 class="mb-4 border-bottom pb-2">
-                            <i class="bi bi-person-badge me-2"></i>您的个人信息
+                            📋 您的个人信息
                         </h3>
                         <div class="row">
                             <div class="col-md-3 mb-3">
@@ -330,12 +246,11 @@
                 <div class="card">
                     <div class="card-body">
                         <h3 class="mb-4 border-bottom pb-2">
-                            <i class="bi bi-chat-left-text me-2"></i>AI分析报告
+                            📝 AI分析报告
                         </h3>
                         <div class="result-card">
                             <div class="alert alert-info mb-3">
-                                <i class="bi bi-info-circle me-2"></i>
-                                数据来源：{{ source }}
+                                ℹ️ 数据来源：{{ source }}
                             </div>
                             <div class="report-content" style="white-space: pre-wrap; line-height: 1.6; font-size: 16px;">
 {{ report }}
@@ -344,133 +259,11 @@
                     </div>
                 </div>
 
-                <!-- 示例产品推荐（静态示例） -->
-                <div class="card">
-                    <div class="card-body">
-                        <h3 class="mb-4 border-bottom pb-2">
-                            <i class="bi bi-star me-2"></i>推荐产品示例
-                        </h3>
-                        
-                        <!-- 产品1 -->
-                        <div class="card product-card mb-3">
-                            <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="company-logo">
-                                            国
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h5 class="card-title mb-1">国寿鑫福年年养老年金保险</h5>
-                                        <p class="card-text text-muted mb-2">
-                                            中国人寿 | 养老年金 | 年交/趸交
-                                        </p>
-                                        <div class="d-flex align-items-center">
-                                            <span class="me-3">匹配度:</span>
-                                            <div class="progress flex-grow-1 me-3" style="height: 20px;">
-                                                <div class="progress-bar progress-bar-custom"
-                                                     role="progressbar"
-                                                     style="width: 85%;"
-                                                     aria-valuenow="85"
-                                                     aria-valuemin="0" aria-valuemax="100">
-                                                    85%
-                                                </div>
-                                            </div>
-                                            <span class="match-badge match-high">
-                                                85分
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row mt-3">
-                                    <div class="col-md-6">
-                                        <h6>产品详情:</h6>
-                                        <ul class="list-unstyled">
-                                            <li><i class="bi bi-person me-2"></i>适合年龄: 18-65岁</li>
-                                            <li><i class="bi bi-shield me-2"></i>风险等级: 低风险</li>
-                                            <li><i class="bi bi-cash-coin me-2"></i>最低保费: 年交5000元起</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6>推荐理由:</h6>
-                                        <ul>
-                                            <li>与您的风险偏好匹配度高</li>
-                                            <li>适合您的年龄阶段</li>
-                                            <li>公司实力强，收益稳定</li>
-                                            <li>提供终身养老保障</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 产品2 -->
-                        <div class="card product-card mb-3">
-                            <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="company-logo">
-                                            太
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h5 class="card-title mb-1">太平鑫禧年年终身年金保险</h5>
-                                        <p class="card-text text-muted mb-2">
-                                            太平人寿 | 年金保险 | 月交/年交
-                                        </p>
-                                        <div class="d-flex align-items-center">
-                                            <span class="me-3">匹配度:</span>
-                                            <div class="progress flex-grow-1 me-3" style="height: 20px;">
-                                                <div class="progress-bar progress-bar-custom"
-                                                     role="progressbar"
-                                                     style="width: 72%;"
-                                                     aria-valuenow="72"
-                                                     aria-valuemin="0" aria-valuemax="100">
-                                                    72%
-                                                </div>
-                                            </div>
-                                            <span class="match-badge match-medium">
-                                                72分
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row mt-3">
-                                    <div class="col-md-6">
-                                        <h6>产品详情:</h6>
-                                        <ul class="list-unstyled">
-                                            <li><i class="bi bi-person me-2"></i>适合年龄: 25-60岁</li>
-                                            <li><i class="bi bi-shield me-2"></i>风险等级: 中低风险</li>
-                                            <li><i class="bi bi-cash-coin me-2"></i>最低保费: 月交500元起</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6>推荐理由:</h6>
-                                        <ul>
-                                            <li>缴费灵活，适合定期储蓄</li>
-                                            <li>提供身故保障</li>
-                                            <li>现金价值增长稳定</li>
-                                            <li>支持保单贷款功能</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-warning mt-3">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            注：以上为示例产品，实际产品推荐请咨询专业保险顾问。
-                        </div>
-                    </div>
-                </div>
-
                 <!-- 温馨提示 -->
                 <div class="card">
                     <div class="card-body">
                         <h3 class="mb-4 border-bottom pb-2">
-                            <i class="bi bi-lightbulb me-2"></i>温馨提示
+                            💡 温馨提示
                         </h3>
                         <div class="result-card">
                             <h5>养老规划重要提醒：</h5>
@@ -482,8 +275,7 @@
                                 <li>咨询专业理财顾问，根据个人情况调整方案</li>
                             </ol>
                             <div class="alert alert-info mt-3">
-                                <i class="bi bi-clock me-2"></i>
-                                下次评估建议时间：<span id="nextReviewDate"></span>
+                                ⏰ 下次评估建议时间：<span id="nextReviewDate"></span>
                             </div>
                         </div>
                     </div>
@@ -495,17 +287,17 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <a href="/" class="btn btn-outline-primary w-100">
-                                    <i class="bi bi-house me-2"></i>返回首页
+                                    🏠 返回首页
                                 </a>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <button onclick="window.print()" class="btn btn-outline-secondary w-100">
-                                    <i class="bi bi-printer me-2"></i>打印报告
+                                    🖨️ 打印报告
                                 </button>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <button onclick="downloadReport()" class="btn btn-outline-success w-100">
-                                    <i class="bi bi-download me-2"></i>下载报告
+                                    📥 下载报告
                                 </button>
                             </div>
                         </div>
@@ -515,21 +307,8 @@
         </div>
     </div>
 
-    <!-- 使用本地JS，修复路径 -->
-    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
-    
-    <script>
-        // 检查Bootstrap是否加载成功
-        if (typeof bootstrap === 'undefined') {
-            console.log('Bootstrap加载失败，请检查静态资源路径');
-            // 显示备用提示
-            const alerts = document.querySelectorAll('.alert');
-            if (alerts.length > 0) {
-                alerts[0].insertAdjacentHTML('afterend', 
-                    '<div class="alert alert-warning">Bootstrap样式加载失败，部分样式可能无法正常显示</div>');
-            }
-        }
-    </script>
+    <!-- 使用本地Bootstrap JS -->
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
     
     <script>
         // 计算下次评估时间（当前时间+3年）
@@ -628,37 +407,6 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
-        
-        // 打印优化
-        window.addEventListener('beforeprint', function() {
-            document.querySelectorAll('.back-btn, .no-print').forEach(el => {
-                el.style.display = 'none';
-            });
-        });
-        
-        window.addEventListener('afterprint', function() {
-            document.querySelectorAll('.back-btn, .no-print').forEach(el => {
-                el.style.display = '';
-            });
-        });
-        
-        // 检查CSS是否加载成功
-        window.addEventListener('load', function() {
-            // 检查Bootstrap CSS是否加载
-            var isBootstrapLoaded = false;
-            for (var i = 0; i < document.styleSheets.length; i++) {
-                var sheet = document.styleSheets[i];
-                if (sheet.href && (sheet.href.includes('bootstrap') || sheet.href.includes('/static/'))) {
-                    isBootstrapLoaded = true;
-                    break;
-                }
-            }
-            
-            if (!isBootstrapLoaded) {
-                console.log('Bootstrap CSS加载失败，使用备用样式');
-                // 可以在这里添加更多备选样式
-            }
-        });
     </script>
 </body>
 </html>
