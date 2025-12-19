@@ -3,237 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能养老金规划系统</title>
+    <title>养老金规划结果</title>
     <!-- 使用本地Bootstrap CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <style>
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             font-family: 'Microsoft YaHei', sans-serif;
             padding-top: 20px;
+            margin: 0;
         }
         .card {
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border: none;
-            transition: transform 0.3s ease;
             margin-bottom: 20px;
+            overflow: hidden;
         }
         .header-bg {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
             color: white;
             border-radius: 15px 15px 0 0;
             padding: 20px;
         }
-        .btn-primary {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            padding: 12px 30px;
-            font-size: 18px;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            color: white;
-        }
-        .btn-primary:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-            color: white;
-        }
-        .form-control, .form-select {
+        .result-card {
+            background: white;
+            border-left: 5px solid #4facfe;
+            padding: 20px;
             border-radius: 10px;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            transition: all 0.3s ease;
+            margin-bottom: 15px;
         }
-        .form-control:focus, .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
-        }
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 9999;
-            justify-content: center;
+        .back-btn {
+            background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+            border: none;
+            padding: 10px 30px;
+            border-radius: 50px;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
             align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
-        .spinner-border {
-            width: 60px;
-            height: 60px;
+        .back-btn:hover {
+            transform: scale(1.05);
+            color: white;
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 15px;
         }
-        .btn-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
         }
-        .btn-group > input[type="radio"] {
-            display: none;
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
         }
-        .btn-group > label {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            border: 1px solid #667eea;
-            border-radius: 5px;
-            cursor: pointer;
-            background: white;
-            color: #667eea;
-        }
-        .btn-group > input[type="radio"]:checked + label {
-            background: #667eea;
-            color: white;
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
         }
     </style>
 </head>
 <body>
-    <!-- 加载动画 -->
-    <div class="loading-overlay" id="loading">
-        <div class="text-center">
-            <div class="spinner-border text-light" role="status">
-                <span class="visually-hidden">加载中...</span>
-            </div>
-            <div class="mt-3 text-white">
-                <h4>正在调用Dify AI分析您的养老金需求...</h4>
-                <p>请稍候，这通常需要10-20秒</p>
-            </div>
-        </div>
-    </div>
-
     <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <!-- 返回按钮 -->
+                <div class="mb-4">
+                    <a href="/" class="back-btn">
+                        ← 重新规划
+                    </a>
+                </div>
+
                 <!-- 标题卡片 -->
-                <div class="card mb-4">
+                <div class="card">
                     <div class="card-header header-bg">
                         <div class="row align-items-center">
                             <div class="col-auto">
-                                <span style="font-size: 2rem;">🏦</span>
+                                <span style="font-size: 2rem;">📊</span>
                             </div>
                             <div class="col">
-                                <h1 class="mb-0">智能养老金规划系统</h1>
-                                <p class="mb-0">基于Dify AI技术，为您量身定制养老方案</p>
+                                <h1 class="mb-0">您的养老金规划报告</h1>
+                                <p class="mb-0">生成时间: {{ analysis_time }}</p>
+                                {% if error %}
+                                <p class="mb-0"><small>注: {{ error }}</small></p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 主要内容卡片 -->
+                <!-- 用户信息摘要 -->
                 <div class="card">
-                    <div class="card-body p-4">
-                        <form id="pensionForm">
-                            <!-- 基本个人信息 -->
-                            <div class="mb-4">
-                                <h3 class="mb-4 border-bottom pb-2">📋 个人信息</h3>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="age" class="form-label">年龄</label>
-                                        <input type="number" class="form-control" id="age" name="age"
-                                               min="18" max="70" value="35" required>
-                                        <div class="form-text">请输入您的年龄（18-70岁）</div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="annual_income" class="form-label">年收入（万元）</label>
-                                        <input type="number" class="form-control" id="annual_income"
-                                               name="annual_income" min="5" max="200" step="0.5" value="25.0" required>
-                                        <div class="form-text">请输入您的年收入</div>
-                                    </div>
+                    <div class="card-body">
+                        <h3 class="mb-4 border-bottom pb-2">📋 您的个人信息</h3>
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">年龄</h6>
+                                    <h3 class="mb-0">{{ user_data.age }}</h3>
+                                    <small class="text-muted">岁</small>
                                 </div>
                             </div>
-
-                            <!-- 风险偏好 -->
-                            <div class="mb-4">
-                                <h3 class="mb-4 border-bottom pb-2">📊 风险偏好</h3>
-                                <div class="row">
-                                    <div class="col-12">
-                                        <div class="btn-group w-100" role="group">
-                                            <input type="radio" class="btn-check" name="risk_tolerance"
-                                                   id="risk_low" value="低" autocomplete="off">
-                                            <label class="btn" for="risk_low">保守型</label>
-
-                                            <input type="radio" class="btn-check" name="risk_tolerance"
-                                                   id="risk_medium_low" value="中低" autocomplete="off">
-                                            <label class="btn" for="risk_medium_low">稳健型</label>
-
-                                            <input type="radio" class="btn-check" name="risk_tolerance"
-                                                   id="risk_medium" value="中" autocomplete="off" checked>
-                                            <label class="btn" for="risk_medium">平衡型</label>
-
-                                            <input type="radio" class="btn-check" name="risk_tolerance"
-                                                   id="risk_medium_high" value="中高" autocomplete="off">
-                                            <label class="btn" for="risk_medium_high">成长型</label>
-
-                                            <input type="radio" class="btn-check" name="risk_tolerance"
-                                                   id="risk_high" value="高" autocomplete="off">
-                                            <label class="btn" for="risk_high">进取型</label>
-                                        </div>
-                                    </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">年收入</h6>
+                                    <h3 class="mb-0">{{ user_data.annual_income }}</h3>
+                                    <small class="text-muted">万元</small>
                                 </div>
                             </div>
-
-                            <!-- 其他信息 -->
-                            <div class="mb-4">
-                                <h3 class="mb-4 border-bottom pb-2">📍 其他信息</h3>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="location" class="form-label">所在地区</label>
-                                        <select class="form-select" id="location" name="location">
-                                            <option value="全国" selected>全国</option>
-                                            <option value="北京">北京</option>
-                                            <option value="上海">上海</option>
-                                            <option value="广州">广州</option>
-                                            <option value="深圳">深圳</option>
-                                            <option value="其他">其他</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="social_security" class="form-label">社保类型</label>
-                                        <select class="form-select" id="social_security" name="social_security">
-                                            <option value="城镇职工" selected>城镇职工</option>
-                                            <option value="城乡居民">城乡居民</option>
-                                            <option value="机关事业">机关事业</option>
-                                            <option value="无社保">无社保</option>
-                                            <option value="其他">其他</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="retirement_age" class="form-label">计划退休年龄</label>
-                                        <input type="range" class="form-range" id="retirement_age"
-                                               name="retirement_age" min="50" max="70" value="60">
-                                        <div class="d-flex justify-content-between">
-                                            <span>50岁</span>
-                                            <span id="retirement_age_value">60岁</span>
-                                            <span>70岁</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="investment_amount" class="form-label">计划投资金额（万元）</label>
-                                        <input type="range" class="form-range" id="investment_amount"
-                                               name="investment_amount" min="1" max="50" step="1" value="12">
-                                        <div class="d-flex justify-content-between">
-                                            <span>1万</span>
-                                            <span id="investment_amount_value">12万</span>
-                                            <span>50万</span>
-                                        </div>
-                                    </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">风险偏好</h6>
+                                    <h3 class="mb-0">{{ user_data.risk_tolerance }}</h3>
+                                    <small class="text-muted">
+                                        {% if user_data.risk_tolerance == '低' %}保守型
+                                        {% elif user_data.risk_tolerance == '中低' %}稳健型
+                                        {% elif user_data.risk_tolerance == '中' %}平衡型
+                                        {% elif user_data.risk_tolerance == '中高' %}成长型
+                                        {% elif user_data.risk_tolerance == '高' %}进取型
+                                        {% else %}{{ user_data.risk_tolerance }}
+                                        {% endif %}
+                                    </small>
                                 </div>
                             </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">计划投资</h6>
+                                    <h3 class="mb-0">{{ user_data.investment_amount }}</h3>
+                                    <small class="text-muted">万元</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-4 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">所在地区</h6>
+                                    <h5 class="mb-0">{{ user_data.location }}</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">社保类型</h6>
+                                    <h5 class="mb-0">{{ user_data.social_security }}</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="result-card text-center">
+                                    <h6 class="text-muted mb-2">退休年龄</h6>
+                                    <h5 class="mb-0">{{ user_data.retirement_age }}岁</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                            <!-- 提交按钮 -->
-                            <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    🚀 开始智能规划
+                <!-- AI分析报告 -->
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="mb-4 border-bottom pb-2">📝 AI分析报告</h3>
+                        <div class="result-card">
+                            <div class="alert alert-info mb-3">
+                                ℹ️ 数据来源：{{ source }}
+                            </div>
+                            <div class="report-content" style="white-space: pre-wrap; line-height: 1.6; font-size: 16px;">
+{{ report }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部操作按钮 -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <a href="/" class="btn btn-outline-primary w-100">
+                                    🏠 返回首页
+                                </a>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <button onclick="window.print()" class="btn btn-outline-secondary w-100">
+                                    🖨️ 打印报告
                                 </button>
                             </div>
-                        </form>
+                            <div class="col-md-4 mb-3">
+                                <button onclick="downloadReport()" class="btn btn-outline-success w-100">
+                                    📥 下载报告
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -244,49 +212,80 @@
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     
     <script>
-        // 实时显示滑块值
-        document.getElementById('retirement_age').addEventListener('input', function() {
-            document.getElementById('retirement_age_value').textContent = this.value + '岁';
-        });
-
-        document.getElementById('investment_amount').addEventListener('input', function() {
-            document.getElementById('investment_amount_value').textContent = this.value + '万';
-        });
-
-        // 表单提交处理
-        document.getElementById('pensionForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            // 显示加载动画
-            document.getElementById('loading').style.display = 'flex';
-
-            // 收集表单数据
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
-
-            try {
-                const response = await fetch('/submit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams(data)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    window.location.href = result.redirect || '/results';
-                } else {
-                    alert('提交失败: ' + result.message);
-                    document.getElementById('loading').style.display = 'none';
-                }
-
-            } catch (error) {
-                alert('网络错误: ' + error.message);
-                document.getElementById('loading').style.display = 'none';
-            }
-        });
+        function downloadReport() {
+            // 获取报告主要内容
+            const reportContent = document.querySelector('.container').innerHTML;
+            
+            // 创建HTML文件
+            const htmlContent = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>养老金规划报告 - {{ user_data.age }}岁{{ user_data.risk_tolerance }}用户</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+            background: #f8f9fa;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .report-header {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .info-card {
+            background: white;
+            border-left: 5px solid #4facfe;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <h1>养老金规划报告</h1>
+        <p>生成时间: {{ analysis_time }}</p>
+        <p>数据来源: {{ source }}</p>
+    </div>
+    
+    ${reportContent}
+    
+    <div class="footer">
+        <p>本报告由智能养老金规划系统生成，仅供参考。</p>
+        <p>投资有风险，决策需谨慎。建议咨询专业理财顾问。</p>
+        <p>© ${new Date().getFullYear()} 智能养老金规划系统</p>
+    </div>
+</body>
+</html>`;
+            
+            // 创建下载
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}年${(now.getMonth()+1).toString().padStart(2,'0')}月${now.getDate().toString().padStart(2,'0')}日`;
+            a.download = `养老金规划报告_${dateStr}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
     </script>
 </body>
 </html>
