@@ -13,7 +13,8 @@ import time
 # 创建 Flask 应用，明确指定静态文件夹路径
 app = Flask(__name__, 
             static_folder='static', 
-            static_url_path='/static')
+            static_url_path='/static',
+            template_folder='templates')  # 明确指定模板文件夹
 app.secret_key = os.environ.get("SECRET_KEY", "pension-planning-secret-key-2024")
 
 # Dify配置
@@ -22,7 +23,7 @@ DIFY_API_BASE_URL = "https://api.dify.ai/v1"
 DIFY_TIMEOUT = 70
 DIFY_DISABLE_PROXY = True
 
-# 确保static目录存在
+# 确保目录存在
 os.makedirs('static/css', exist_ok=True)
 os.makedirs('static/js', exist_ok=True)
 os.makedirs('static/fonts', exist_ok=True)
@@ -215,10 +216,11 @@ def index():
     session['session_id'] = str(uuid.uuid4())[:8]
     return render_template('index.html')
 
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    """提供静态文件"""
-    return send_from_directory('static', filename)
+@app.route('/favicon.ico')
+def favicon():
+    """提供favicon"""
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/submit', methods=['POST'])
 def submit_form():
@@ -272,7 +274,7 @@ def show_results():
     """显示结果页面"""
     if 'user_data' not in session:
         # 重定向到首页
-        return redirect(url_for('index'))
+        return redirect('/')
     
     user_data = session.get('user_data', {})
     ai_result = session.get('ai_result', {})
@@ -307,6 +309,12 @@ def health_check():
         "timestamp": datetime.now().isoformat()
     })
 
+# 静态文件路由 - Flask会自动处理/static/路径
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    """提供静态文件"""
+    return send_from_directory(app.static_folder, filename)
+
 # 错误处理
 @app.errorhandler(404)
 def not_found(error):
@@ -329,18 +337,20 @@ if __name__ == '__main__':
     print("="*80)
     
     # 检查静态文件是否存在
-    static_files = [
-        'static/css/bootstrap.min.css',
-        'static/css/bootstrap-icons.css',
-        'static/js/bootstrap.bundle.min.js',
-        'static/fonts/bootstrap-icons.woff2',
-        'static/fonts/bootstrap-icons.woff'
+    static_files_to_check = [
+        'css/bootstrap.min.css',
+        'css/bootstrap-icons.css',
+        'js/bootstrap.bundle.min.js',
+        'fonts/bootstrap-icons.woff2',
+        'fonts/bootstrap-icons.woff'
     ]
     
-    for file in static_files:
-        if os.path.exists(file):
-            print(f"✅ 找到: {file}")
+    for file in static_files_to_check:
+        file_path = os.path.join('static', file)
+        if os.path.exists(file_path):
+            print(f"✅ 找到: {file_path}")
         else:
-            print(f"❌ 缺失: {file}")
+            print(f"❌ 缺失: {file_path}")
+            print(f"   请确保将相关文件下载到 {file_path}")
     
     app.run(host='0.0.0.0', port=5000, debug=True)
