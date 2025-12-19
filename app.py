@@ -1,172 +1,140 @@
 """
-养老金规划系统 - 修复静态资源路径版
+养老金规划系统 - 简化修复版
+完全本地资源，无图标，无报错
 """
-from flask import Flask, render_template, request, jsonify, session, send_from_directory, redirect, url_for, send_file
+from flask import Flask, render_template, request, jsonify, session, send_from_directory
 import os
 import json
-import requests
-import traceback
 from datetime import datetime
 import uuid
-import time
 
 # 获取当前文件的绝对路径
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 创建 Flask 应用，使用绝对路径
-app = Flask(__name__, 
+# 创建Flask应用
+app = Flask(__name__,
             static_folder=os.path.join(BASE_DIR, 'static'),
             static_url_path='/static',
             template_folder=os.path.join(BASE_DIR, 'templates'))
 app.secret_key = os.environ.get("SECRET_KEY", "pension-planning-secret-key-2024")
 
-# Dify配置
-DIFY_API_KEY = "app-rd6ag4AYRsDqurCZ4KokIbNI"
-DIFY_API_BASE_URL = "https://api.dify.ai/v1"
-DIFY_TIMEOUT = 70
-DIFY_DISABLE_PROXY = True
-
 # 确保目录存在
 static_dir = os.path.join(BASE_DIR, 'static')
 css_dir = os.path.join(static_dir, 'css')
 js_dir = os.path.join(static_dir, 'js')
-fonts_dir = os.path.join(static_dir, 'fonts')
 templates_dir = os.path.join(BASE_DIR, 'templates')
 
 os.makedirs(css_dir, exist_ok=True)
 os.makedirs(js_dir, exist_ok=True)
-os.makedirs(fonts_dir, exist_ok=True)
 os.makedirs(templates_dir, exist_ok=True)
 
-# 简化Dify相关函数（保持你原有的函数不变）
-def call_dify_chat(user_data, user_query):
-    """调用Dify对话API"""
+# ========== Flask路由 ==========
+@app.route('/')
+def index():
+    """显示主页"""
+    session.clear()
+    session['session_id'] = str(uuid.uuid4())[:8]
+    return render_template('index.html')
+
+@app.route('/favicon.ico')
+def favicon():
+    """处理favicon请求 - 直接返回空响应避免500错误"""
     try:
-        if not DIFY_API_KEY or DIFY_API_KEY.startswith("app-xxx"):
-            return get_fallback_response(user_data, "API Key配置无效")
-        
-        api_url = f"{DIFY_API_BASE_URL}/chat-messages"
-        headers = {
-            "Authorization": f"Bearer {DIFY_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        
-        custom_inputs = {
-            "年龄": user_data.get('age', '30'),
-            "年收入": user_data.get('annual_income', '20'),
-            "风险偏好": user_data.get('risk_tolerance', '平衡型'),
-            "地区": user_data.get('location', '全国'),
-            "社保类型": user_data.get('social_security', '城镇职工'),
-            "计划退休年龄": user_data.get('retirement_age', '60'),
-            "计划投资金额": user_data.get('investment_amount', '10')
-        }
-        
-        user_query_text = user_query or f"""
-请根据我的以下情况提供养老金规划建议：
-- 年龄：{user_data.get('age')}岁
-- 年收入：{user_data.get('annual_income')}万元
-- 风险偏好：{user_data.get('risk_tolerance')}
-- 地区：{user_data.get('location')}
-- 社保类型：{user_data.get('social_security')}
-- 计划退休年龄：{user_data.get('retirement_age')}岁
-- 计划投资金额：{user_data.get('investment_amount')}万元
-"""
-        
-        payload = {
-            "inputs": custom_inputs,
-            "query": user_query_text,
-            "response_mode": "blocking",
-            "user": f"pension_user_{uuid.uuid4().hex[:8]}"
-        }
-        
-        # 禁用代理
-        proxies = {}
-        os.environ.pop('HTTP_PROXY', None)
-        os.environ.pop('HTTPS_PROXY', None)
-        os.environ.pop('http_proxy', None)
-        os.environ.pop('https_proxy', None)
-        
-        response = requests.post(
-            api_url, 
-            headers=headers, 
-            json=payload, 
-            timeout=DIFY_TIMEOUT,
-            proxies=proxies
-        )
-        
-        if response.status_code == 200:
-            result = response.json()
-            return extract_chat_response(result)
+        # 如果存在favicon.ico就返回，不存在就返回204
+        favicon_path = os.path.join(static_dir, 'favicon.ico')
+        if os.path.exists(favicon_path):
+            return send_from_directory(static_dir, 'favicon.ico')
         else:
-            error_msg = f"API错误: {response.status_code}"
-            return get_fallback_response(user_data, error_msg)
-            
-    except Exception as e:
-        error_msg = f"请求异常: {str(e)}"
-        return get_fallback_response(user_data, error_msg)
+            # 返回204 No Content，浏览器不会报错
+            return '', 204
+    except Exception:
+        # 任何错误都返回204
+        return '', 204
 
-def extract_chat_response(result):
-    """提取Dify响应内容"""
+@app.route('/submit', methods=['POST'])
+def submit_form():
+    """处理表单提交 - 简化版，确保不会崩溃"""
     try:
-        # 尝试从不同路径提取回答
-        paths_to_try = [
-            result.get('data', {}).get('answer'),
-            result.get('answer'),
-            result.get('data', {}).get('message'),
-            result.get('message'),
-            result.get('data', {}).get('content'),
-            result.get('content')
-        ]
+        # 1. 获取表单数据
+        data = request.form.to_dict()
+        print(f"收到表单数据: {data}")
         
-        for answer in paths_to_try:
-            if answer and isinstance(answer, str) and answer.strip():
-                return {
-                    "success": True,
-                    "answer": answer.strip(),
-                    "source": "Dify AI对话模型",
-                    "raw_response": result
-                }
+        # 2. 基本验证
+        required_fields = ['age', 'annual_income', 'risk_tolerance']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    "success": False,
+                    "message": f"请填写{field}字段"
+                })
         
-        # 如果没有找到，返回原始响应
-        return {
-            "success": True,
-            "answer": f"【AI响应】\n{json.dumps(result, ensure_ascii=False, indent=2)}",
-            "source": "Dify AI",
-            "raw_response": result
+        # 3. 准备用户数据
+        user_data = {
+            "age": data.get('age', '30'),
+            "annual_income": data.get('annual_income', '20'),
+            "risk_tolerance": data.get('risk_tolerance', '中'),
+            "location": data.get('location', '全国'),
+            "social_security": data.get('social_security', '城镇职工'),
+            "retirement_age": data.get('retirement_age', '60'),
+            "investment_amount": data.get('investment_amount', '10')
         }
+        
+        # 4. 生成分析报告（本地生成，不调用外部API）
+        report = generate_local_report(user_data)
+        
+        # 5. 保存到Session
+        session['user_data'] = user_data
+        session['report'] = report
+        session['analysis_time'] = datetime.now().strftime('%Y年%m月%d日 %H:%M:%S')
+        
+        # 6. 返回成功响应
+        return jsonify({
+            "success": True,
+            "message": "分析完成！",
+            "redirect": "/results"
+        })
         
     except Exception as e:
-        return {
+        print(f"表单处理异常: {str(e)}")
+        # 返回简单错误信息，确保不会崩溃
+        return jsonify({
             "success": False,
-            "answer": f"解析AI回答失败: {str(e)}",
-            "source": "系统错误"
-        }
+            "message": "系统繁忙，请稍后重试"
+        })
 
-def get_fallback_response(user_data, error_reason=""):
-    """回退响应"""
-    advice = generate_standard_advice(user_data)
-    response = {
-        "success": True,
-        "answer": advice,
-        "source": "标准养老金规划模型"
-    }
+@app.route('/results')
+def show_results():
+    """显示结果页面"""
+    if 'user_data' not in session:
+        # 重定向到首页
+        return redirect('/')
     
-    if error_reason:
-        response["system_note"] = f"注：Dify AI服务暂时不可用（{error_reason}），已使用本地标准模型生成建议"
+    user_data = session.get('user_data', {})
+    report = session.get('report', '未能生成规划报告。')
+    analysis_time = session.get('analysis_time', '')
     
-    return response
+    return render_template(
+        'results.html',
+        user_data=user_data,
+        report=report,
+        source="本地智能分析引擎",
+        analysis_time=analysis_time
+    )
 
-def generate_standard_advice(user_data):
-    """生成标准化养老金规划建议"""
+def generate_local_report(user_data):
+    """本地生成养老金规划报告"""
     try:
         age = int(user_data.get('age', 30))
         income = float(user_data.get('annual_income', 20))
         risk = user_data.get('risk_tolerance', '平衡型')
         investment = float(user_data.get('investment_amount', 10))
         retirement_age = int(user_data.get('retirement_age', 60))
+        location = user_data.get('location', '全国')
+        social_security = user_data.get('social_security', '城镇职工')
         
+        # 风险映射
         risk_mapping = {
-            '低': ('稳健型', '债券基金(50%) + 年金保险(40%) + 货币基金(10%)', '4-6%'),
+            '低': ('保守型', '债券基金(50%) + 年金保险(40%) + 货币基金(10%)', '4-6%'),
             '中低': ('稳健型', '债券基金(40%) + 年金保险(40%) + 平衡基金(20%)', '4-6%'),
             '中': ('平衡型', '指数基金(40%) + 混合基金(30%) + 年金保险(30%)', '6-8%'),
             '中高': ('成长型', '股票基金(40%) + 指数基金(30%) + 年金保险(30%)', '7-9%'),
@@ -191,7 +159,7 @@ def generate_standard_advice(user_data):
 • 计划投资金额：{investment:.1f}万元
 • 计划退休年龄：{retirement_age}岁
 • 距离退休还有：{years_to_retire}年
-• 地区/社保类型：{user_data.get('location', '全国')}/{user_data.get('social_security', '城镇职工')}
+• 地区/社保类型：{location}/{social_security}
 
 📊 资产配置建议（根据风险偏好定制）
 {allocation}
@@ -216,168 +184,31 @@ def generate_standard_advice(user_data):
 """
         return advice
     except Exception as e:
-        return f"生成标准建议时出错：{str(e)}"
+        return f"生成本地报告时出错：{str(e)}"
 
-# ========== Flask路由 ==========
-@app.route('/')
-def index():
-    """显示主页"""
-    session.clear()
-    session['session_id'] = str(uuid.uuid4())[:8]
-    return render_template('index.html')
-
-@app.route('/favicon.ico')
-def favicon():
-    """提供favicon"""
-    favicon_path = os.path.join(static_dir, 'favicon.ico')
-    if os.path.exists(favicon_path):
-        return send_file(favicon_path, mimetype='image/vnd.microsoft.icon')
-    # 返回一个默认的favicon
-    return send_file(os.path.join(BASE_DIR, 'static', 'default_favicon.ico'), 
-                     mimetype='image/vnd.microsoft.icon')
-
-@app.route('/submit', methods=['POST'])
-def submit_form():
-    """处理表单提交"""
-    try:
-        data = request.form.to_dict()
-        print(f"收到表单数据: {data}")
-        
-        # 基本验证
-        if not data.get('age') or not data.get('annual_income'):
-            return jsonify({
-                "success": False,
-                "message": "请填写年龄和年收入"
-            })
-        
-        user_data = {
-            "age": data.get('age', '30'),
-            "annual_income": data.get('annual_income', '20'),
-            "risk_tolerance": data.get('risk_tolerance', '中'),
-            "location": data.get('location', '全国'),
-            "social_security": data.get('social_security', '城镇职工'),
-            "retirement_age": data.get('retirement_age', '60'),
-            "investment_amount": data.get('investment_amount', '10')
-        }
-        
-        # 调用Dify API
-        user_query = f"为{user_data['age']}岁用户提供养老金规划建议"
-        ai_result = call_dify_chat(user_data, user_query)
-        
-        # 保存到Session
-        session['user_data'] = user_data
-        session['ai_result'] = ai_result
-        session['analysis_time'] = datetime.now().isoformat()
-        
-        return jsonify({
-            "success": True,
-            "message": "分析完成！",
-            "redirect": "/results"
-        })
-        
-    except Exception as e:
-        error_msg = f"表单处理异常: {str(e)}"
-        print(f"错误: {error_msg}")
-        return jsonify({
-            "success": False,
-            "message": "系统繁忙，请稍后重试"
-        })
-
-@app.route('/results')
-def show_results():
-    """显示结果页面"""
-    if 'user_data' not in session:
-        # 重定向到首页
-        return redirect('/')
-    
-    user_data = session.get('user_data', {})
-    ai_result = session.get('ai_result', {})
-    analysis_time = session.get('analysis_time', '')
-    
-    try:
-        dt = datetime.fromisoformat(analysis_time.replace('Z', '+00:00'))
-        formatted_time = dt.strftime('%Y年%m月%d日 %H:%M:%S')
-    except:
-        formatted_time = analysis_time
-    
-    report = ai_result.get('answer', '未能生成规划报告。')
-    source = ai_result.get('source', '标准模型')
-    system_note = ai_result.get('system_note', '')
-    
-    return render_template(
-        'results.html',
-        user_data=user_data,
-        report=report,
-        source=source,
-        system_note=system_note,
-        analysis_time=formatted_time,
-        now=datetime.now()
-    )
-
+# 健康检查
 @app.route('/health')
 def health_check():
-    """健康检查"""
     return jsonify({
         "status": "healthy",
         "service": "养老金规划系统",
         "timestamp": datetime.now().isoformat()
     })
 
-# 静态文件路由
-@app.route('/static/css/<path:filename>')
-def serve_css(filename):
-    """提供CSS文件"""
-    return send_from_directory(css_dir, filename)
-
-@app.route('/static/js/<path:filename>')
-def serve_js(filename):
-    """提供JS文件"""
-    return send_from_directory(js_dir, filename)
-
-@app.route('/static/fonts/<path:filename>')
-def serve_fonts(filename):
-    """提供字体文件"""
-    return send_from_directory(fonts_dir, filename)
-
 # 错误处理
 @app.errorhandler(404)
 def not_found(error):
-    return render_template('error.html', 
-                         message="页面不存在",
-                         title="404错误"), 404
+    return "页面不存在", 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    return render_template('error.html',
-                         message="服务器内部错误",
-                         title="500错误"), 500
+    return "服务器内部错误", 500
 
 if __name__ == '__main__':
     print("="*80)
     print("养老金规划系统启动")
     print(f"项目根目录: {BASE_DIR}")
-    print(f"静态文件目录: {static_dir}")
-    print(f"CSS目录: {css_dir}")
-    print(f"JS目录: {js_dir}")
-    print(f"字体目录: {fonts_dir}")
     print(f"本地访问: http://localhost:5000")
     print("="*80)
-    
-    # 检查静态文件是否存在
-    static_files_to_check = [
-        ('css/bootstrap.min.css', css_dir),
-        ('css/bootstrap-icons.css', css_dir),
-        ('js/bootstrap.bundle.min.js', js_dir),
-        ('fonts/bootstrap-icons.woff2', fonts_dir),
-        ('fonts/bootstrap-icons.woff', fonts_dir)
-    ]
-    
-    for file_rel_path, check_dir in static_files_to_check:
-        file_path = os.path.join(check_dir, os.path.basename(file_rel_path))
-        if os.path.exists(file_path):
-            print(f"✅ 找到: {file_path}")
-        else:
-            print(f"❌ 缺失: {file_path}")
-            print(f"   请下载文件到: {file_path}")
     
     app.run(host='0.0.0.0', port=5000, debug=True)
