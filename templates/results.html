@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>养老金规划结果</title>
     <!-- 使用本地Bootstrap CSS -->
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <style>
         body {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -33,28 +33,6 @@
             border-radius: 10px;
             margin-bottom: 15px;
         }
-        .match-badge {
-            font-size: 14px;
-            padding: 5px 15px;
-            border-radius: 20px;
-            display: inline-block;
-        }
-        .match-high { background-color: #28a745; color: white; }
-        .match-medium { background-color: #ffc107; color: black; }
-        .match-low { background-color: #dc3545; color: white; }
-        .company-logo {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
         .back-btn {
             background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
             border: none;
@@ -73,42 +51,10 @@
             color: white;
             box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
         }
-        .progress-bar-custom {
-            height: 25px;
-            border-radius: 15px;
-            background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 100%);
-        }
-        .product-card {
-            transition: transform 0.3s ease;
-            cursor: pointer;
-            border: 1px solid #e9ecef;
-        }
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        }
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 15px;
-        }
-        .text-center {
-            text-align: center;
-        }
-        .mb-4 {
-            margin-bottom: 1.5rem;
-        }
-        .mb-3 {
-            margin-bottom: 1rem;
-        }
-        .mt-3 {
-            margin-top: 1rem;
-        }
-        .mt-4 {
-            margin-top: 1.5rem;
-        }
-        .w-100 {
-            width: 100%;
         }
         .alert {
             padding: 15px;
@@ -124,28 +70,6 @@
             background-color: #fff3cd;
             border-color: #ffeaa7;
             color: #856404;
-        }
-        .progress {
-            height: 20px;
-            background-color: #e9ecef;
-            border-radius: 15px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 100%;
-            line-height: 20px;
-            text-align: center;
-            color: white;
-        }
-        .border-bottom {
-            border-bottom: 1px solid #dee2e6;
-        }
-        .pb-2 {
-            padding-bottom: 0.5rem;
-        }
-        .list-unstyled {
-            padding-left: 0;
-            list-style: none;
         }
     </style>
 </head>
@@ -170,6 +94,9 @@
                             <div class="col">
                                 <h1 class="mb-0">您的养老金规划报告</h1>
                                 <p class="mb-0">生成时间: {{ analysis_time }}</p>
+                                {% if error %}
+                                <p class="mb-0"><small>注: {{ error }}</small></p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -178,9 +105,7 @@
                 <!-- 用户信息摘要 -->
                 <div class="card">
                     <div class="card-body">
-                        <h3 class="mb-4 border-bottom pb-2">
-                            📋 您的个人信息
-                        </h3>
+                        <h3 class="mb-4 border-bottom pb-2">📋 您的个人信息</h3>
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <div class="result-card text-center">
@@ -245,37 +170,13 @@
                 <!-- AI分析报告 -->
                 <div class="card">
                     <div class="card-body">
-                        <h3 class="mb-4 border-bottom pb-2">
-                            📝 AI分析报告
-                        </h3>
+                        <h3 class="mb-4 border-bottom pb-2">📝 AI分析报告</h3>
                         <div class="result-card">
                             <div class="alert alert-info mb-3">
                                 ℹ️ 数据来源：{{ source }}
                             </div>
                             <div class="report-content" style="white-space: pre-wrap; line-height: 1.6; font-size: 16px;">
 {{ report }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 温馨提示 -->
-                <div class="card">
-                    <div class="card-body">
-                        <h3 class="mb-4 border-bottom pb-2">
-                            💡 温馨提示
-                        </h3>
-                        <div class="result-card">
-                            <h5>养老规划重要提醒：</h5>
-                            <ol>
-                                <li>养老金规划是一个长期过程，建议定期（每3-5年）重新评估</li>
-                                <li>结合社保和企业年金，构建多层次的养老保障体系</li>
-                                <li>注意分散投资，不要将全部资金投入单一产品</li>
-                                <li>随着年龄增长，应逐步降低投资风险</li>
-                                <li>咨询专业理财顾问，根据个人情况调整方案</li>
-                            </ol>
-                            <div class="alert alert-info mt-3">
-                                ⏰ 下次评估建议时间：<span id="nextReviewDate"></span>
                             </div>
                         </div>
                     </div>
@@ -308,21 +209,9 @@
     </div>
 
     <!-- 使用本地Bootstrap JS -->
-    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     
     <script>
-        // 计算下次评估时间（当前时间+3年）
-        function getNextReviewDate() {
-            const now = new Date();
-            const nextYear = now.getFullYear() + 3;
-            const month = now.getMonth() + 1;
-            const day = now.getDate();
-            return `${nextYear}年${month}月${day}日`;
-        }
-        
-        // 设置下次评估时间
-        document.getElementById('nextReviewDate').textContent = getNextReviewDate();
-        
         function downloadReport() {
             // 获取报告主要内容
             const reportContent = document.querySelector('.container').innerHTML;
@@ -357,12 +246,6 @@
             border-radius: 8px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
-        .product-card {
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 10px;
-        }
         .footer {
             text-align: center;
             margin-top: 40px;
@@ -371,17 +254,13 @@
             color: #666;
             font-size: 14px;
         }
-        @media print {
-            body { padding: 0; }
-            .no-print { display: none !important; }
-        }
     </style>
 </head>
 <body>
     <div class="report-header">
         <h1>养老金规划报告</h1>
         <p>生成时间: {{ analysis_time }}</p>
-        <p>用户ID: ${Date.now()}</p>
+        <p>数据来源: {{ source }}</p>
     </div>
     
     ${reportContent}
